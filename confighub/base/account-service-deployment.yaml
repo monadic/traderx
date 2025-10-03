@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: account-service
+  namespace: traderx-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: account-service
+  template:
+    metadata:
+      labels:
+        app: account-service
+        layer: backend
+    spec:
+      containers:
+      - name: account-service
+        image: finos/traderx-account-service:latest
+        ports:
+        - containerPort: 18091
+        env:
+        - name: NODE_ENV
+          value: "development"
+        - name: PORT
+          value: "18091"
+        - name: REFERENCE_DATA_URL
+          value: "http://reference-data:18085"
+        - name: PEOPLE_SERVICE_URL
+          value: "http://people-service:18089"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

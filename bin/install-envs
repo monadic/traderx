@@ -1,0 +1,67 @@
+#!/bin/bash
+set -e
+
+# TraderX ConfigHub - Environment Hierarchy Setup
+# Pattern 2: Space Hierarchy (base → dev → staging → prod)
+
+PROJECT=$(bin/proj)
+if [ -z "$PROJECT" ]; then
+  echo "ERROR: Project not found. Run bin/install-base first."
+  exit 1
+fi
+
+echo "🚀 Creating environment hierarchy for $PROJECT..."
+
+# Create dev environment (cloned from base)
+echo "Creating dev environment..."
+cub space create ${PROJECT}-dev \
+  --label project=$PROJECT \
+  --label environment=dev
+
+# Clone units from base to dev with upstream relationship
+cub unit create --dest-space ${PROJECT}-dev \
+  --space ${PROJECT}-base \
+  --filter ${PROJECT}/all \
+  --label targetable=true \
+  --label environment=dev
+
+# Create staging environment (cloned from dev)
+echo "Creating staging environment..."
+cub space create ${PROJECT}-staging \
+  --label project=$PROJECT \
+  --label environment=staging
+
+# Clone units from dev to staging with upstream relationship
+cub unit create --dest-space ${PROJECT}-staging \
+  --space ${PROJECT}-dev \
+  --filter ${PROJECT}/all \
+  --label targetable=true \
+  --label environment=staging
+
+# Create production environment (cloned from staging)
+echo "Creating production environment..."
+cub space create ${PROJECT}-prod \
+  --label project=$PROJECT \
+  --label environment=prod
+
+# Clone units from staging to prod with upstream relationship
+cub unit create --dest-space ${PROJECT}-prod \
+  --space ${PROJECT}-staging \
+  --filter ${PROJECT}/all \
+  --label targetable=true \
+  --label environment=prod
+
+echo "✅ Environment hierarchy created successfully!"
+echo ""
+echo "Hierarchy:"
+echo "  ${PROJECT}-base"
+echo "    └── ${PROJECT}-dev"
+echo "        └── ${PROJECT}-staging"
+echo "            └── ${PROJECT}-prod"
+echo ""
+echo "Next steps:"
+echo "  1. Run: bin/apply-all dev       # Deploy to development"
+echo "  2. Run: bin/promote dev staging # Promote to staging"
+echo ""
+echo "View hierarchy:"
+echo "  cub unit tree --node=space --filter ${PROJECT}/all --space '*'""

@@ -1,0 +1,40 @@
+#!/bin/bash
+set -e
+
+# TraderX ConfigHub - Promote Between Environments
+# Pattern 6: Push-Upgrade for Environment Promotion
+
+PROJECT=$(bin/proj)
+if [ -z "$PROJECT" ]; then
+  echo "ERROR: Project not found. Run bin/install-base first."
+  exit 1
+fi
+
+FROM_ENV=$1
+TO_ENV=$2
+
+if [ -z "$FROM_ENV" ] || [ -z "$TO_ENV" ]; then
+  echo "Usage: bin/promote <from-env> <to-env>"
+  echo "  Example: bin/promote dev staging"
+  echo "  Example: bin/promote staging prod"
+  exit 1
+fi
+
+FROM_SPACE="${PROJECT}-${FROM_ENV}"
+TO_SPACE="${PROJECT}-${TO_ENV}"
+
+echo "🚀 Promoting from $FROM_SPACE to $TO_SPACE..."
+
+# Use push-upgrade to propagate changes
+echo "Pushing changes to downstream environment..."
+cub unit update --patch --upgrade --space $TO_SPACE
+
+echo "✅ Promotion complete!"
+echo ""
+echo "Next steps:"
+echo "  1. Review changes: cub unit diff --space $TO_SPACE"
+echo "  2. Apply changes: bin/apply-all $TO_ENV"
+echo ""
+echo "Rollback if needed:"
+echo "  cub revision list --space $TO_SPACE"
+echo "  cub revision apply <revision-id> --space $TO_SPACE"

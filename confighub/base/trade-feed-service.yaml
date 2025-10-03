@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: trade-feed
+  namespace: traderx-dev
+spec:
+  selector:
+    app: trade-feed
+  ports:
+  - port: 18088
+    targetPort: 18088
+    protocol: TCP
+  type: ClusterIP

@@ -1,0 +1,60 @@
+#!/bin/bash
+set -e
+
+# TraderX ConfigHub - Apply All Services to Environment
+
+PROJECT=$(bin/proj)
+if [ -z "$PROJECT" ]; then
+  echo "ERROR: Project not found. Run bin/install-base first."
+  exit 1
+fi
+
+ENV=$1
+if [ -z "$ENV" ]; then
+  echo "Usage: bin/apply-all <environment>"
+  echo "  Environments: dev, staging, prod"
+  exit 1
+fi
+
+SPACE="${PROJECT}-${ENV}"
+echo "🚀 Deploying TraderX to $SPACE..."
+
+# First, set target for this environment if not already set
+echo "Setting Kubernetes target for $SPACE..."
+cub target create k8s-${ENV} \
+  --space $SPACE \
+  --type kubernetes \
+  --config "{\"context\": \"$ENV-cluster\", \"namespace\": \"traderx-${ENV}\"}" \
+  || echo "Target already exists"
+
+# Apply units in dependency order
+echo "Applying services in order..."
+
+# Get all units sorted by order label
+units=$(cub unit list --space $SPACE --format json | \
+  jq -r '.[] | "\(.Labels.order // "99"):\(.Slug)"' | \
+  sort -t: -k1 -n | \
+  cut -d: -f2)
+
+if [ -z "$units" ]; then
+  echo "ERROR: No units found in space $SPACE. Run bin/install-envs first."
+  exit 1
+fi
+
+# Apply each unit
+for unit in $units; do
+  echo "  📦 Applying $unit..."
+  cub unit apply $unit \
+    --space $SPACE \
+    --target k8s-${ENV} \
+    || echo "  ⚠️  Failed to apply $unit (may already be applied)"
+done
+
+echo "✅ All services deployed to $ENV!"
+echo ""
+echo "Check deployment status:"
+echo "  kubectl get all -n traderx-${ENV}"
+echo ""
+echo "Access the application:"
+echo "  kubectl port-forward -n traderx-${ENV} svc/web-gui 18080:18080"
+echo "  open http://localhost:18080"

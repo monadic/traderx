@@ -1,0 +1,110 @@
+#!/bin/bash
+set -e
+
+# TraderX ConfigHub - Apply Services in Dependency Order
+# Ensures reference-data starts before dependent services
+
+PROJECT=$(bin/proj)
+if [ -z "$PROJECT" ]; then
+  echo "ERROR: Project not found. Run bin/install-base first."
+  exit 1
+fi
+
+ENV=$1
+if [ -z "$ENV" ]; then
+  echo "Usage: bin/ordered-apply <environment>"
+  echo "  Environments: dev, staging, prod"
+  exit 1
+fi
+
+SPACE="${PROJECT}-${ENV}"
+echo "🚀 Applying TraderX services in dependency order to $SPACE..."
+
+# Define service dependencies and order
+declare -A dependencies
+dependencies["reference-data"]=""  # No dependencies, starts first
+dependencies["people-service"]="reference-data"
+dependencies["account-service"]="reference-data people-service"
+dependencies["position-service"]="reference-data account-service"
+dependencies["trade-service"]="reference-data account-service position-service"
+dependencies["trade-processor"]="trade-service"
+dependencies["trade-feed"]="trade-service"
+dependencies["web-gui"]="trade-service people-service account-service"
+
+# Function to check if a service is ready
+check_service_ready() {
+  local service=$1
+  echo -n "  Waiting for $service to be ready..."
+
+  for i in {1..30}; do
+    # Check if deployment has at least 1 ready replica
+    ready=$(kubectl get deployment $service -n traderx-${ENV} -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+    if [ "$ready" -gt 0 ]; then
+      echo " ✓"
+      return 0
+    fi
+    sleep 2
+    echo -n "."
+  done
+
+  echo " ⚠️ (timeout, continuing anyway)"
+  return 1
+}
+
+# Apply namespace first
+echo "📦 Applying namespace..."
+cub unit apply namespace --space $SPACE --target k8s-${ENV} || true
+
+# Apply services in order
+applied=()
+
+apply_service() {
+  local service=$1
+
+  # Check if already applied
+  for s in "${applied[@]}"; do
+    [ "$s" == "$service" ] && return 0
+  done
+
+  # Apply dependencies first
+  local deps="${dependencies[$service]}"
+  if [ -n "$deps" ]; then
+    for dep in $deps; do
+      apply_service $dep
+    done
+  fi
+
+  echo "📦 Applying $service..."
+
+  # Apply deployment
+  cub unit apply ${service}-deployment --space $SPACE --target k8s-${ENV} || true
+
+  # Apply service if it exists
+  if cub unit get ${service}-service --space $SPACE &>/dev/null; then
+    cub unit apply ${service}-service --space $SPACE --target k8s-${ENV} || true
+  fi
+
+  # Wait for service to be ready before continuing
+  check_service_ready $service
+
+  # Mark as applied
+  applied+=("$service")
+}
+
+# Apply all services in dependency order
+for service in reference-data people-service account-service position-service trade-service trade-processor trade-feed web-gui; do
+  apply_service $service
+done
+
+# Apply ingress last
+echo "📦 Applying ingress..."
+cub unit apply ingress --space $SPACE --target k8s-${ENV} || true
+
+echo "✅ All services deployed in order!"
+echo ""
+echo "Check deployment status:"
+echo "  kubectl get all -n traderx-${ENV}"
+echo ""
+echo "Access the application:"
+echo "  kubectl port-forward -n traderx-${ENV} svc/web-gui 18080:18080"
+echo "  open http://localhost:18080"

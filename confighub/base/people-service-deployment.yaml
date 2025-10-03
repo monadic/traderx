@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: people-service
+  namespace: traderx-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: people-service
+  template:
+    metadata:
+      labels:
+        app: people-service
+        layer: backend
+    spec:
+      containers:
+      - name: people-service
+        image: finos/traderx-people-service:latest
+        ports:
+        - containerPort: 18089
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "dev"
+        - name: SERVER_PORT
+          value: "18089"
+        - name: REFERENCE_DATA_URL
+          value: "http://reference-data:18085"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

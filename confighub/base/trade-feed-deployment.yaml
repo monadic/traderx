@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trade-feed
+  namespace: traderx-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trade-feed
+  template:
+    metadata:
+      labels:
+        app: trade-feed
+        layer: backend
+    spec:
+      containers:
+      - name: trade-feed
+        image: finos/traderx-trade-feed:latest
+        ports:
+        - containerPort: 18088
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "dev"
+        - name: SERVER_PORT
+          value: "18088"
+        - name: TRADE_SERVICE_URL
+          value: "http://trade-service:18092"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

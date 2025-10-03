@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-gui
+  namespace: traderx-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-gui
+  template:
+    metadata:
+      labels:
+        app: web-gui
+        layer: frontend
+    spec:
+      containers:
+      - name: web-gui
+        image: finos/traderx-web-gui:latest
+        ports:
+        - containerPort: 18080
+        env:
+        - name: NODE_ENV
+          value: "development"
+        - name: PORT
+          value: "18080"
+        - name: TRADE_SERVICE_URL
+          value: "http://trade-service:18092"
+        - name: PEOPLE_SERVICE_URL
+          value: "http://people-service:18089"
+        - name: ACCOUNT_SERVICE_URL
+          value: "http://account-service:18091"
+        - name: REFERENCE_DATA_URL
+          value: "http://reference-data:18085"
+        - name: POSITION_SERVICE_URL
+          value: "http://position-service:18090"
+        - name: TRADE_FEED_URL
+          value: "http://trade-feed:18088"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

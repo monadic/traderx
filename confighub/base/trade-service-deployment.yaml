@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trade-service
+  namespace: traderx-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trade-service
+  template:
+    metadata:
+      labels:
+        app: trade-service
+        layer: backend
+    spec:
+      containers:
+      - name: trade-service
+        image: finos/traderx-trade-service:latest
+        ports:
+        - containerPort: 18092
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Development"
+        - name: ASPNETCORE_URLS
+          value: "http://+:18092"
+        - name: REFERENCE_DATA_URL
+          value: "http://reference-data:18085"
+        - name: ACCOUNT_SERVICE_URL
+          value: "http://account-service:18091"
+        - name: POSITION_SERVICE_URL
+          value: "http://position-service:18090"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

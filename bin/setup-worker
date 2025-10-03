@@ -1,0 +1,137 @@
+#!/bin/bash
+set -e
+
+# TraderX ConfigHub - Install ConfigHub Worker for Auto-Deploy
+# Pattern 7: Event-Driven Architecture with Workers
+
+PROJECT=$(bin/proj)
+if [ -z "$PROJECT" ]; then
+  echo "ERROR: Project not found. Run bin/install-base first."
+  exit 1
+fi
+
+ENV=$1
+if [ -z "$ENV" ]; then
+  echo "Usage: bin/setup-worker <environment>"
+  echo "  Environments: dev, staging, prod"
+  exit 1
+fi
+
+SPACE="${PROJECT}-${ENV}"
+echo "🚀 Installing ConfigHub worker in $SPACE..."
+
+# Create worker configuration unit
+echo "Creating worker configuration..."
+cat > /tmp/worker-config.yaml << EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: confighub-worker-config
+  namespace: traderx-${ENV}
+data:
+  config.yaml: |
+    space: "${SPACE}"
+    target: "k8s-${ENV}"
+    interval: 10
+    filters:
+      - "${PROJECT}/all"
+    autoApply: true
+EOF
+
+cub unit create confighub-worker-config \
+  --space $SPACE \
+  --type kubernetes/v1/ConfigMap \
+  --data-file /tmp/worker-config.yaml \
+  --label type=worker \
+  --label auto-deploy=true \
+  || echo "Worker config already exists"
+
+# Create worker deployment
+echo "Creating worker deployment..."
+cat > /tmp/worker-deployment.yaml << EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: confighub-worker
+  namespace: traderx-${ENV}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: confighub-worker
+  template:
+    metadata:
+      labels:
+        app: confighub-worker
+    spec:
+      containers:
+      - name: worker
+        image: confighub/worker:latest
+        env:
+        - name: CUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: confighub-token
+              key: token
+        - name: CUB_API_URL
+          value: "https://hub.confighub.com/api"
+        - name: CUB_SPACE
+          value: "${SPACE}"
+        - name: AUTO_APPLY
+          value: "true"
+        volumeMounts:
+        - name: config
+          mountPath: /etc/confighub
+      volumes:
+      - name: config
+        configMap:
+          name: confighub-worker-config
+EOF
+
+cub unit create confighub-worker-deployment \
+  --space $SPACE \
+  --type kubernetes/apps/v1/Deployment \
+  --data-file /tmp/worker-deployment.yaml \
+  --label type=worker \
+  --label auto-deploy=true \
+  || echo "Worker deployment already exists"
+
+# Create secret for ConfigHub token
+echo "Creating ConfigHub token secret..."
+cat > /tmp/worker-secret.yaml << EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: confighub-token
+  namespace: traderx-${ENV}
+type: Opaque
+data:
+  token: $(cub auth get-token | base64)
+EOF
+
+cub unit create confighub-worker-secret \
+  --space $SPACE \
+  --type kubernetes/v1/Secret \
+  --data-file /tmp/worker-secret.yaml \
+  --label type=worker \
+  --label sensitive=true \
+  || echo "Worker secret already exists"
+
+# Apply worker units
+echo "Deploying worker..."
+cub unit apply confighub-worker-config --space $SPACE --target k8s-${ENV}
+cub unit apply confighub-worker-secret --space $SPACE --target k8s-${ENV}
+cub unit apply confighub-worker-deployment --space $SPACE --target k8s-${ENV}
+
+echo "✅ ConfigHub worker installed!"
+echo ""
+echo "The worker will now:"
+echo "  • Monitor $SPACE for changes"
+echo "  • Auto-apply changes to k8s-${ENV}"
+echo "  • Check every 10 seconds"
+echo ""
+echo "View worker logs:"
+echo "  kubectl logs -n traderx-${ENV} -l app=confighub-worker --follow"
+echo ""
+echo "Test auto-deployment:"
+echo "  cub run set-image-reference --container-name web-gui --image-reference :v1.2.3 --space $SPACE"

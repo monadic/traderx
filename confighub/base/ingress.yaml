@@ -1,0 +1,61 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: traderx-ingress
+  namespace: traderx-dev
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: traderx.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: web-gui
+            port:
+              number: 18080
+      - path: /api/reference-data
+        pathType: Prefix
+        backend:
+          service:
+            name: reference-data
+            port:
+              number: 18085
+      - path: /api/people
+        pathType: Prefix
+        backend:
+          service:
+            name: people-service
+            port:
+              number: 18089
+      - path: /api/accounts
+        pathType: Prefix
+        backend:
+          service:
+            name: account-service
+            port:
+              number: 18091
+      - path: /api/positions
+        pathType: Prefix
+        backend:
+          service:
+            name: position-service
+            port:
+              number: 18090
+      - path: /api/trades
+        pathType: Prefix
+        backend:
+          service:
+            name: trade-service
+            port:
+              number: 18092
+      - path: /api/trade-feed
+        pathType: Prefix
+        backend:
+          service:
+            name: trade-feed
+            port:
+              number: 18088
