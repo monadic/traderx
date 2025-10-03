@@ -1,0 +1,340 @@
+{
+  "dashboard": {
+    "title": "TraderX Trading Platform Overview",
+    "tags": ["traderx", "trading", "production"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "type": "graph",
+        "title": "Service Availability",
+        "targets": [
+          {
+            "expr": "up{job=~\"traderx.*\"}",
+            "legendFormat": "{{ service }} - {{ environment }}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "min": 0, "max": 1},
+          {"format": "short"}
+        ],
+        "alert": {
+          "name": "Service Down Alert",
+          "conditions": [
+            {
+              "evaluator": {"params": [1], "type": "lt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "last"},
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "60s",
+          "handler": 1,
+          "message": "TraderX service is down",
+          "noDataState": "no_data"
+        }
+      },
+      {
+        "id": 2,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "type": "graph",
+        "title": "Request Rate (req/s)",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{job=~\"traderx.*\"}[5m])",
+            "legendFormat": "{{ service }} - {{ environment }}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "min": 0},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 3,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "type": "graph",
+        "title": "Response Time (P95)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=~\"traderx.*\"}[5m]))",
+            "legendFormat": "{{ service }} - {{ environment }}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "min": 0},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 4,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "type": "graph",
+        "title": "Error Rate (%)",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{status=~\"5..\",job=~\"traderx.*\"}[5m]) / rate(http_requests_total{job=~\"traderx.*\"}[5m]) * 100",
+            "legendFormat": "{{ service }} - {{ environment }}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "min": 0},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 5,
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 16},
+        "type": "stat",
+        "title": "Trade Service Status",
+        "targets": [
+          {
+            "expr": "up{service=\"trade-service\"}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "background",
+          "graphMode": "none",
+          "orientation": "auto",
+          "textMode": "value_and_name"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 1, "color": "green"}
+              ]
+            },
+            "mappings": [
+              {"type": "value", "value": "0", "text": "DOWN"},
+              {"type": "value", "value": "1", "text": "UP"}
+            ]
+          }
+        }
+      },
+      {
+        "id": 6,
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 16},
+        "type": "stat",
+        "title": "Reference Data Status",
+        "targets": [
+          {
+            "expr": "up{service=\"reference-data\"}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "background",
+          "graphMode": "none",
+          "orientation": "auto",
+          "textMode": "value_and_name"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 1, "color": "green"}
+              ]
+            },
+            "mappings": [
+              {"type": "value", "value": "0", "text": "DOWN"},
+              {"type": "value", "value": "1", "text": "UP"}
+            ]
+          }
+        }
+      },
+      {
+        "id": 7,
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 16},
+        "type": "stat",
+        "title": "Position Service Status",
+        "targets": [
+          {
+            "expr": "up{service=\"position-service\"}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "background",
+          "graphMode": "none",
+          "orientation": "auto",
+          "textMode": "value_and_name"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 1, "color": "green"}
+              ]
+            },
+            "mappings": [
+              {"type": "value", "value": "0", "text": "DOWN"},
+              {"type": "value", "value": "1", "text": "UP"}
+            ]
+          }
+        }
+      },
+      {
+        "id": 8,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+        "type": "graph",
+        "title": "Memory Usage",
+        "targets": [
+          {
+            "expr": "container_memory_usage_bytes{namespace=~\"traderx.*\"} / container_spec_memory_limit_bytes * 100",
+            "legendFormat": "{{ container }} - {{ namespace }}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "min": 0, "max": 100},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 9,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+        "type": "graph",
+        "title": "CPU Usage",
+        "targets": [
+          {
+            "expr": "rate(container_cpu_usage_seconds_total{namespace=~\"traderx.*\"}[5m]) * 100",
+            "legendFormat": "{{ container }} - {{ namespace }}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "min": 0},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 10,
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 32},
+        "type": "table",
+        "title": "Service Health Summary",
+        "targets": [
+          {
+            "expr": "up{job=~\"traderx.*\"}",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true, "__name__": true, "job": true},
+              "indexByName": {},
+              "renameByName": {
+                "service": "Service",
+                "environment": "Environment",
+                "instance": "Instance",
+                "Value": "Status"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 40},
+        "type": "graph",
+        "title": "Pod Restarts",
+        "targets": [
+          {
+            "expr": "rate(kube_pod_container_status_restarts_total{namespace=~\"traderx.*\"}[15m])",
+            "legendFormat": "{{ pod }}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "min": 0},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 12,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 40},
+        "type": "graph",
+        "title": "Network I/O",
+        "targets": [
+          {
+            "expr": "rate(container_network_receive_bytes_total{namespace=~\"traderx.*\"}[5m])",
+            "legendFormat": "RX: {{ pod }}",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(container_network_transmit_bytes_total{namespace=~\"traderx.*\"}[5m])",
+            "legendFormat": "TX: {{ pod }}",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "Bps", "min": 0},
+          {"format": "short"}
+        ]
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "environment",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(up{job=~\"traderx.*\"}, environment)",
+          "refresh": 1,
+          "multi": true,
+          "includeAll": true
+        },
+        {
+          "name": "service",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(up{job=~\"traderx.*\"}, service)",
+          "refresh": 1,
+          "multi": true,
+          "includeAll": true
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "ALERTS{alertstate=\"firing\", job=~\"traderx.*\"}",
+          "iconColor": "red",
+          "name": "Alerts",
+          "step": "60s",
+          "tagKeys": "alertname,severity",
+          "textFormat": "{{ alertname }}",
+          "titleFormat": "Alert"
+        }
+      ]
+    }
+  },
+  "overwrite": true
+}

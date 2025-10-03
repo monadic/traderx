@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: web-gui
-        image: finos/traderx-web-gui:latest
+        image: ghcr.io/finos/traderx/web-gui:latest
         ports:
         - containerPort: 18080
         env:

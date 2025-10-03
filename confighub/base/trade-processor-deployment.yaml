@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: trade-processor
-        image: finos/traderx-trade-processor:latest
+        image: ghcr.io/finos/traderx/trade-processor:latest
         env:
         - name: PYTHON_ENV
           value: "development"

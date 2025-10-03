@@ -1,0 +1,5 @@
+[2025-10-03 21:36:53] INFO: Starting ordered deployment to mellow-muzzle-traderx-dev...
+[2025-10-03 21:36:53] INFO: Log file: logs/ordered-apply-20251003-213653.log
+./bin/ordered-apply: line 62: declare: -A: invalid option
+declare: usage: declare [-afFirtx] [-p] [name[=value] ...]
+[2025-10-03 21:36:53] ERROR: Script failed at line 62 with exit code 2

@@ -55,10 +55,10 @@ cub filter create trading-services Unit \
   --space ${project}-filters \
   --where-field "Labels.service IN ('trade-service', 'trade-processor', 'trade-feed')"
 
-# Deployment order filter
+# Deployment order filter (using IN operator with possible values)
 cub filter create ordered Unit \
   --space ${project}-filters \
-  --where-field "Labels.order IS NOT NULL"
+  --where-field "Labels.order IN ('0','1','2','3','4','5','6','7','8','9')"
 
 # Create Sets for grouping
 echo "Creating sets..."
@@ -66,26 +66,23 @@ echo "Creating sets..."
 cub set create critical-services \
   --space ${project}-base \
   --label tier=critical \
-  --label monitor=true \
-  --description "Core trading services that must not fail"
+  --label monitor=true
 
 cub set create data-services \
   --space ${project}-base \
   --label tier=data \
-  --label layer=data \
-  --description "Data layer services"
+  --label layer=data
 
 # Create units for each service
 echo "Creating ConfigHub units..."
 
 # Infrastructure units first
 echo "  Creating namespace unit..."
-cub unit create namespace \
-  --space ${project}-base \
-  --type kubernetes/v1/Namespace \
-  --data-file confighub/base/namespace.yaml \
+cub unit create --space ${project}-base \
   --label type=infra \
-  --label order=0
+  --label order=0 \
+  namespace \
+  confighub/base/namespace.yaml
 
 # Service units (in dependency order)
 services=(
@@ -106,38 +103,35 @@ for service_info in "${services[@]}"; do
 
   # Create deployment unit
   if [ -f "confighub/base/${service}-deployment.yaml" ]; then
-    cub unit create ${service}-deployment \
-      --space ${project}-base \
-      --type kubernetes/v1/Deployment \
-      --data-file confighub/base/${service}-deployment.yaml \
+    cub unit create --space ${project}-base \
       --label service=$service \
       --label layer=$layer \
       --label tech=$tech \
       --label order=$order \
-      --label port=$port
+      --label port=$port \
+      ${service}-deployment \
+      confighub/base/${service}-deployment.yaml
   fi
 
   # Create service unit (if has port)
   if [ "$port" != "0" ] && [ -f "confighub/base/${service}-service.yaml" ]; then
-    cub unit create ${service}-service \
-      --space ${project}-base \
-      --type kubernetes/v1/Service \
-      --data-file confighub/base/${service}-service.yaml \
+    cub unit create --space ${project}-base \
       --label service=$service \
       --label layer=$layer \
-      --label port=$port
+      --label port=$port \
+      ${service}-service \
+      confighub/base/${service}-service.yaml
   fi
 done
 
 # Create ingress
 if [ -f "confighub/base/ingress.yaml" ]; then
   echo "  Creating ingress unit..."
-  cub unit create ingress \
-    --space ${project}-base \
-    --type kubernetes/networking.k8s.io/v1/Ingress \
-    --data-file confighub/base/ingress.yaml \
+  cub unit create --space ${project}-base \
     --label type=infra \
-    --label order=9
+    --label order=9 \
+    ingress \
+    confighub/base/ingress.yaml
 fi
 
 echo "✅ TraderX base structure installed successfully!"

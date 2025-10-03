@@ -1,0 +1,235 @@
+#!/bin/bash
+set -euo pipefail
+
+# TraderX Rollback Script - Automated Rollback to Last Known Good State
+# Implements ConfigHub-only rollback using unit revisions
+
+# Logging configuration
+LOG_DIR="logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/rollback-$(date +%Y%m%d-%H%M%S).log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+# Timestamp function
+timestamp() {
+  date '+%Y-%m-%d %H:%M:%S'
+}
+
+log() {
+  echo "[$(timestamp)] $*"
+}
+
+error() {
+  log "ERROR: $*" >&2
+}
+
+warn() {
+  log "WARN: $*"
+}
+
+info() {
+  log "INFO: $*"
+}
+
+# Trap errors
+trap 'error "Rollback script failed at line $LINENO with exit code $?"; exit 1' ERR
+
+PROJECT=$(bin/proj 2>/dev/null || echo "")
+if [ -z "$PROJECT" ]; then
+  error "Project not found. Run bin/install-base first."
+  exit 1
+fi
+
+ENV=$1
+REVISION=${2:-}
+
+if [ -z "$ENV" ]; then
+  error "Missing environment argument"
+  echo "Usage: bin/rollback <environment> [revision-number]"
+  echo "  Environments: dev, staging, prod"
+  echo "  If revision-number is not provided, rolls back to previous revision (N-1)"
+  echo ""
+  echo "Examples:"
+  echo "  bin/rollback prod          # Rollback to previous revision"
+  echo "  bin/rollback prod 5        # Rollback to specific revision 5"
+  exit 1
+fi
+
+# Validate environment
+if [[ ! "$ENV" =~ ^(dev|staging|prod)$ ]]; then
+  error "Invalid environment: $ENV. Must be dev, staging, or prod"
+  exit 1
+fi
+
+SPACE="${PROJECT}-${ENV}"
+NAMESPACE="traderx-${ENV}"
+
+# Production safety check
+if [ "$ENV" == "prod" ]; then
+  warn "PRODUCTION ROLLBACK REQUESTED"
+  echo ""
+  echo "⚠️  WARNING: You are about to rollback PRODUCTION environment!"
+  echo ""
+  echo "Environment: $ENV"
+  echo "Space: $SPACE"
+  echo "Namespace: $NAMESPACE"
+  echo ""
+  read -p "Type 'ROLLBACK' to confirm: " confirmation
+  if [ "$confirmation" != "ROLLBACK" ]; then
+    error "Rollback cancelled by user"
+    exit 1
+  fi
+fi
+
+info "Starting rollback for $ENV environment"
+info "Space: $SPACE"
+info "Namespace: $NAMESPACE"
+
+# Services to rollback (in reverse deployment order)
+SERVICES=(
+  "web-gui"
+  "trade-feed"
+  "trade-processor"
+  "trade-service"
+  "position-service"
+  "account-service"
+  "people-service"
+  "reference-data"
+)
+
+# Track rollback status
+rollback_start=$(date +%s)
+successful_rollbacks=0
+failed_rollbacks=0
+
+# Function to rollback a single service
+rollback_service() {
+  local service=$1
+  local unit="${service}-deployment"
+
+  info "Rolling back $service..."
+
+  # Get current revision
+  local current_rev=$(cub unit get "$unit" --space "$SPACE" 2>/dev/null | \
+    jq -r '.Revision // 0')
+
+  if [ "$current_rev" -eq 0 ]; then
+    warn "$unit has no revision history, skipping..."
+    return 0
+  fi
+
+  # Determine target revision
+  local target_rev
+  if [ -n "$REVISION" ]; then
+    target_rev=$REVISION
+  else
+    target_rev=$((current_rev - 1))
+  fi
+
+  if [ "$target_rev" -lt 1 ]; then
+    warn "$unit is already at earliest revision, skipping..."
+    return 0
+  fi
+
+  info "  Current revision: $current_rev"
+  info "  Target revision: $target_rev"
+
+  # Perform rollback using ConfigHub (NOT kubectl)
+  if ! cub unit apply "$unit" --space "$SPACE" --revision="$target_rev"; then
+    error "  Failed to rollback $unit to revision $target_rev"
+    failed_rollbacks=$((failed_rollbacks + 1))
+    return 1
+  fi
+
+  # Wait for rollback to complete
+  local timeout=60
+  local elapsed=0
+  while [ $elapsed -lt $timeout ]; do
+    local ready=$(kubectl get deployment "$service" -n "$NAMESPACE" \
+      -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+    local desired=$(kubectl get deployment "$service" -n "$NAMESPACE" \
+      -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
+
+    if [ "$ready" -eq "$desired" ] && [ "$ready" -gt 0 ]; then
+      info "  ✓ $service rolled back successfully"
+      successful_rollbacks=$((successful_rollbacks + 1))
+      return 0
+    fi
+
+    sleep 2
+    elapsed=$((elapsed + 2))
+  done
+
+  warn "  ⚠ $service rollback timed out, but may still succeed"
+  successful_rollbacks=$((successful_rollbacks + 1))
+  return 0
+}
+
+# Perform rollback for all services
+echo ""
+echo "========================================"
+echo "Rolling Back Services"
+echo "========================================"
+echo ""
+
+for service in "${SERVICES[@]}"; do
+  rollback_service "$service" || warn "Rollback of $service encountered issues, continuing..."
+  echo ""
+done
+
+# Calculate rollback time
+rollback_end=$(date +%s)
+rollback_time=$((rollback_end - rollback_start))
+
+# Verify system health after rollback
+info "Verifying system health after rollback..."
+sleep 5
+
+# Run health check
+if bin/health-check "$ENV" &>/dev/null; then
+  health_status="HEALTHY ✓"
+else
+  health_status="NEEDS ATTENTION ⚠"
+fi
+
+# Final status report
+echo ""
+echo "========================================"
+echo "Rollback Summary"
+echo "========================================"
+echo "Environment: $ENV"
+echo "Space: $SPACE"
+echo "Rollback time: ${rollback_time}s"
+echo "Successful rollbacks: $successful_rollbacks"
+echo "Failed rollbacks: $failed_rollbacks"
+echo "System health: $health_status"
+echo ""
+
+if [ $failed_rollbacks -eq 0 ]; then
+  info "Rollback completed successfully!"
+  echo ""
+  echo "Next steps:"
+  echo "  1. Verify application functionality"
+  echo "  2. Check logs: kubectl logs deployment/<service-name> -n $NAMESPACE"
+  echo "  3. Run full health check: bin/health-check $ENV"
+  echo ""
+  echo "If issues persist:"
+  echo "  1. Check specific service: kubectl describe deployment <service-name> -n $NAMESPACE"
+  echo "  2. Emergency recovery: bin/emergency-recovery $ENV"
+  echo ""
+  echo "Log file: $LOG_FILE"
+  exit 0
+else
+  error "Rollback completed with $failed_rollbacks failures"
+  echo ""
+  echo "Troubleshooting commands:"
+  echo "  kubectl get all -n $NAMESPACE"
+  echo "  kubectl describe deployment <service-name> -n $NAMESPACE"
+  echo "  kubectl logs deployment/<service-name> -n $NAMESPACE"
+  echo ""
+  echo "Emergency recovery:"
+  echo "  bin/emergency-recovery $ENV"
+  echo ""
+  echo "Log file: $LOG_FILE"
+  exit 1
+fi

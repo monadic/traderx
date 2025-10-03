@@ -2,18 +2,18 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: trade-service
-  namespace: traderx-dev
+  namespace: {{ .Namespace | default "traderx-dev" }}
   labels:
     app: trade-service
     service: trade-service
     layer: backend
     tech: dotnet
-    version: latest
+    version: {{ .Version | default "latest" }}
   annotations:
     confighub.io/managed: "true"
     confighub.io/critical: "true"
 spec:
-  replicas: 1
+  replicas: {{ .Replicas | default 1 }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -29,7 +29,7 @@ spec:
         service: trade-service
         layer: backend
         tech: dotnet
-        version: latest
+        version: {{ .Version | default "latest" }}
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "18092"
@@ -42,7 +42,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: trade-service
-        image: ghcr.io/finos/traderx/trade-service:latest
+        image: finos/traderx-trade-service:{{ .ImageTag | default "latest" }}
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
@@ -50,7 +50,7 @@ spec:
           protocol: TCP
         env:
         - name: ASPNETCORE_ENVIRONMENT
-          value: Development
+          value: {{ .Environment | title | default "Development" }}
         - name: ASPNETCORE_URLS
           value: "http://+:18092"
         - name: REFERENCE_DATA_URL
@@ -105,11 +105,11 @@ spec:
           failureThreshold: 12
         resources:
           requests:
-            memory: 512Mi
-            cpu: 500m
+            memory: {{ .ResourceRequestMemory | default "512Mi" }}
+            cpu: {{ .ResourceRequestCPU | default "500m" }}
           limits:
-            memory: 1Gi
-            cpu: 1000m
+            memory: {{ .ResourceLimitMemory | default "1Gi" }}
+            cpu: {{ .ResourceLimitCPU | default "1000m" }}
         volumeMounts:
         - name: tmp
           mountPath: /tmp

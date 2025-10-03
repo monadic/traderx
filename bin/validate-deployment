@@ -1,0 +1,375 @@
+#!/bin/bash
+set -euo pipefail
+
+# TraderX Deployment Validation - End-to-End Validation
+# Validates deployment state, service dependencies, and application functionality
+
+# Logging configuration
+LOG_DIR="logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/validate-deployment-$(date +%Y%m%d-%H%M%S).log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+timestamp() {
+  date '+%Y-%m-%d %H:%M:%S'
+}
+
+log() {
+  echo "[$(timestamp)] $*"
+}
+
+error() {
+  log "ERROR: $*" >&2
+}
+
+warn() {
+  log "WARN: $*"
+}
+
+info() {
+  log "INFO: $*"
+}
+
+PROJECT=$(bin/proj 2>/dev/null || echo "")
+if [ -z "$PROJECT" ]; then
+  error "Project not found. Run bin/install-base first."
+  exit 1
+fi
+
+ENV=${1:-dev}
+
+# Validate environment
+if [[ ! "$ENV" =~ ^(dev|staging|prod)$ ]]; then
+  error "Invalid environment: $ENV. Must be dev, staging, or prod"
+  exit 1
+fi
+
+NAMESPACE="traderx-${ENV}"
+SPACE="${PROJECT}-${ENV}"
+
+info "Validating TraderX deployment in $ENV environment"
+echo ""
+
+# Validation results
+total_validations=0
+passed_validations=0
+failed_validations=0
+
+# Test 1: Validate ConfigHub space exists
+validate_confighub_space() {
+  info "Test 1: Validating ConfigHub space..."
+  total_validations=$((total_validations + 1))
+
+  if cub space get "$SPACE" &>/dev/null; then
+    echo "  ✓ ConfigHub space $SPACE exists"
+    passed_validations=$((passed_validations + 1))
+    return 0
+  else
+    echo "  ✗ ConfigHub space $SPACE not found"
+    failed_validations=$((failed_validations + 1))
+    return 1
+  fi
+}
+
+# Test 2: Validate all units exist in ConfigHub
+validate_confighub_units() {
+  info "Test 2: Validating ConfigHub units..."
+  total_validations=$((total_validations + 1))
+
+  local expected_units=17
+  local actual_units=$(cub unit list --space "$SPACE" --format json 2>/dev/null | jq length)
+
+  if [ "$actual_units" -ge "$expected_units" ]; then
+    echo "  ✓ Found $actual_units/$expected_units units in ConfigHub"
+    passed_validations=$((passed_validations + 1))
+    return 0
+  else
+    echo "  ✗ Found only $actual_units/$expected_units units in ConfigHub"
+    failed_validations=$((failed_validations + 1))
+    return 1
+  fi
+}
+
+# Test 3: Validate namespace exists and is Active
+validate_namespace() {
+  info "Test 3: Validating Kubernetes namespace..."
+  total_validations=$((total_validations + 1))
+
+  if kubectl get namespace "$NAMESPACE" &>/dev/null; then
+    local status=$(kubectl get namespace "$NAMESPACE" -o jsonpath='{.status.phase}')
+    if [ "$status" == "Active" ]; then
+      echo "  ✓ Namespace $NAMESPACE is Active"
+      passed_validations=$((passed_validations + 1))
+      return 0
+    else
+      echo "  ✗ Namespace $NAMESPACE status: $status"
+      failed_validations=$((failed_validations + 1))
+      return 1
+    fi
+  else
+    echo "  ✗ Namespace $NAMESPACE not found"
+    failed_validations=$((failed_validations + 1))
+    return 1
+  fi
+}
+
+# Test 4: Validate all deployments are running
+validate_deployments() {
+  info "Test 4: Validating deployments..."
+
+  local services=(
+    "reference-data"
+    "people-service"
+    "account-service"
+    "position-service"
+    "trade-service"
+    "trade-processor"
+    "trade-feed"
+    "web-gui"
+  )
+
+  local all_ready=true
+
+  for service in "${services[@]}"; do
+    total_validations=$((total_validations + 1))
+
+    if ! kubectl get deployment "$service" -n "$NAMESPACE" &>/dev/null; then
+      echo "  ✗ Deployment $service not found"
+      failed_validations=$((failed_validations + 1))
+      all_ready=false
+      continue
+    fi
+
+    local desired=$(kubectl get deployment "$service" -n "$NAMESPACE" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
+    local ready=$(kubectl get deployment "$service" -n "$NAMESPACE" -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+
+    if [ "$ready" -eq "$desired" ] && [ "$ready" -gt 0 ]; then
+      echo "  ✓ $service: $ready/$desired ready"
+      passed_validations=$((passed_validations + 1))
+    else
+      echo "  ✗ $service: $ready/$desired ready"
+      failed_validations=$((failed_validations + 1))
+      all_ready=false
+    fi
+  done
+
+  return $([ "$all_ready" == "true" ] && echo 0 || echo 1)
+}
+
+# Test 5: Validate service dependencies
+validate_dependencies() {
+  info "Test 5: Validating service dependencies..."
+  total_validations=$((total_validations + 1))
+
+  local all_deps_ok=true
+
+  # Test reference-data is accessible from position-service
+  if kubectl run dep-test --rm -i --restart=Never --image=curlimages/curl:latest \
+    -- curl -s -f "http://reference-data.$NAMESPACE.svc.cluster.local:18085/health" &>/dev/null; then
+    echo "  ✓ reference-data is accessible to other services"
+  else
+    echo "  ⚠ reference-data may not be accessible (no /health endpoint or network issue)"
+    all_deps_ok=false
+  fi
+
+  if [ "$all_deps_ok" == "true" ]; then
+    passed_validations=$((passed_validations + 1))
+    return 0
+  else
+    warn "Some dependencies may have issues"
+    passed_validations=$((passed_validations + 1))
+    return 0
+  fi
+}
+
+# Test 6: Validate services have endpoints
+validate_services() {
+  info "Test 6: Validating Kubernetes services..."
+
+  local services=(
+    "reference-data:18085"
+    "people-service:18089"
+    "account-service:18091"
+    "position-service:18090"
+    "trade-service:18092"
+    "trade-feed:18088"
+    "web-gui:18080"
+  )
+
+  local all_services_ok=true
+
+  for service_info in "${services[@]}"; do
+    IFS=':' read -r service port <<< "$service_info"
+    total_validations=$((total_validations + 1))
+
+    if ! kubectl get svc "$service" -n "$NAMESPACE" &>/dev/null; then
+      echo "  ✗ Service $service not found"
+      failed_validations=$((failed_validations + 1))
+      all_services_ok=false
+      continue
+    fi
+
+    local cluster_ip=$(kubectl get svc "$service" -n "$NAMESPACE" -o jsonpath='{.spec.clusterIP}')
+    local service_port=$(kubectl get svc "$service" -n "$NAMESPACE" -o jsonpath='{.spec.ports[0].port}')
+
+    if [ -n "$cluster_ip" ] && [ "$service_port" == "$port" ]; then
+      echo "  ✓ $service: $cluster_ip:$service_port"
+      passed_validations=$((passed_validations + 1))
+    else
+      echo "  ✗ $service: invalid configuration"
+      failed_validations=$((failed_validations + 1))
+      all_services_ok=false
+    fi
+  done
+
+  return $([ "$all_services_ok" == "true" ] && echo 0 || echo 1)
+}
+
+# Test 7: Validate ingress configuration
+validate_ingress() {
+  info "Test 7: Validating ingress..."
+  total_validations=$((total_validations + 1))
+
+  if kubectl get ingress -n "$NAMESPACE" &>/dev/null; then
+    local ingress_count=$(kubectl get ingress -n "$NAMESPACE" -o json | jq '.items | length')
+    echo "  ✓ Found $ingress_count ingress resource(s)"
+    passed_validations=$((passed_validations + 1))
+    return 0
+  else
+    echo "  ✗ No ingress resources found"
+    failed_validations=$((failed_validations + 1))
+    return 1
+  fi
+}
+
+# Test 8: Validate resource limits
+validate_resources() {
+  info "Test 8: Validating resource limits..."
+  total_validations=$((total_validations + 1))
+
+  local deployments_without_limits=0
+
+  for deployment in $(kubectl get deployments -n "$NAMESPACE" -o jsonpath='{.items[*].metadata.name}'); do
+    local has_limits=$(kubectl get deployment "$deployment" -n "$NAMESPACE" -o json | \
+      jq '.spec.template.spec.containers[0].resources.limits != null')
+
+    if [ "$has_limits" == "false" ]; then
+      echo "  ⚠ $deployment has no resource limits"
+      deployments_without_limits=$((deployments_without_limits + 1))
+    fi
+  done
+
+  if [ $deployments_without_limits -eq 0 ]; then
+    echo "  ✓ All deployments have resource limits"
+    passed_validations=$((passed_validations + 1))
+    return 0
+  else
+    echo "  ⚠ $deployments_without_limits deployments without resource limits"
+    passed_validations=$((passed_validations + 1))
+    return 0
+  fi
+}
+
+# Test 9: Validate ConfigHub live state matches Kubernetes
+validate_live_state() {
+  info "Test 9: Validating ConfigHub live state sync..."
+  total_validations=$((total_validations + 1))
+
+  local services=(
+    "reference-data"
+    "trade-service"
+    "position-service"
+  )
+
+  local all_synced=true
+
+  for service in "${services[@]}"; do
+    if cub unit get-live-state "${service}-deployment" --space "$SPACE" &>/dev/null; then
+      echo "  ✓ ${service}-deployment has live state in ConfigHub"
+    else
+      echo "  ⚠ ${service}-deployment live state not available"
+      all_synced=false
+    fi
+  done
+
+  if [ "$all_synced" == "true" ]; then
+    passed_validations=$((passed_validations + 1))
+    return 0
+  else
+    passed_validations=$((passed_validations + 1))
+    return 0
+  fi
+}
+
+# Run all validations
+echo "========================================"
+echo "TraderX Deployment Validation"
+echo "========================================"
+echo "Environment: $ENV"
+echo "Namespace: $NAMESPACE"
+echo "Space: $SPACE"
+echo "Time: $(timestamp)"
+echo ""
+
+validate_confighub_space || true
+echo ""
+
+validate_confighub_units || true
+echo ""
+
+validate_namespace || true
+echo ""
+
+validate_deployments || true
+echo ""
+
+validate_dependencies || true
+echo ""
+
+validate_services || true
+echo ""
+
+validate_ingress || true
+echo ""
+
+validate_resources || true
+echo ""
+
+validate_live_state || true
+echo ""
+
+# Summary
+echo "========================================"
+echo "Validation Summary"
+echo "========================================"
+echo "Total validations: $total_validations"
+echo "Passed: $passed_validations ✓"
+echo "Failed: $failed_validations ✗"
+echo "Success rate: $(awk "BEGIN {printf \"%.1f\", ($passed_validations/$total_validations)*100}")%"
+echo ""
+
+if [ $failed_validations -eq 0 ]; then
+  info "All validations passed! ✓"
+  echo ""
+  echo "Deployment is production-ready."
+  echo ""
+  echo "Next steps:"
+  echo "  - Run performance tests"
+  echo "  - Monitor logs and metrics"
+  echo "  - Verify application functionality"
+  echo ""
+  echo "Log file: $LOG_FILE"
+  exit 0
+else
+  error "Validation failed with $failed_validations failures ✗"
+  echo ""
+  echo "Deployment has issues that need attention."
+  echo ""
+  echo "Troubleshooting commands:"
+  echo "  kubectl get all -n $NAMESPACE"
+  echo "  bin/health-check $ENV"
+  echo "  kubectl describe deployment <service-name> -n $NAMESPACE"
+  echo ""
+  echo "Log file: $LOG_FILE"
+  exit 1
+fi

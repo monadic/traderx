@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: account-service
-        image: finos/traderx-account-service:latest
+        image: ghcr.io/finos/traderx/account-service:latest
         ports:
         - containerPort: 18091
         env:

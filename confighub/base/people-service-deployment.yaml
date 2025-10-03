@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: people-service
-        image: finos/traderx-people-service:latest
+        image: ghcr.io/finos/traderx/people-service:latest
         ports:
         - containerPort: 18089
         env:

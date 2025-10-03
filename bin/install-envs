@@ -21,7 +21,7 @@ cub space create ${PROJECT}-dev \
 # Clone units from base to dev with upstream relationship
 cub unit create --dest-space ${PROJECT}-dev \
   --space ${PROJECT}-base \
-  --filter ${PROJECT}/all \
+  --filter ${PROJECT}-filters/all \
   --label targetable=true \
   --label environment=dev
 
@@ -34,7 +34,7 @@ cub space create ${PROJECT}-staging \
 # Clone units from dev to staging with upstream relationship
 cub unit create --dest-space ${PROJECT}-staging \
   --space ${PROJECT}-dev \
-  --filter ${PROJECT}/all \
+  --filter ${PROJECT}-filters/all \
   --label targetable=true \
   --label environment=staging
 
@@ -47,7 +47,7 @@ cub space create ${PROJECT}-prod \
 # Clone units from staging to prod with upstream relationship
 cub unit create --dest-space ${PROJECT}-prod \
   --space ${PROJECT}-staging \
-  --filter ${PROJECT}/all \
+  --filter ${PROJECT}-filters/all \
   --label targetable=true \
   --label environment=prod
 
@@ -64,4 +64,4 @@ echo "  1. Run: bin/apply-all dev       # Deploy to development"
 echo "  2. Run: bin/promote dev staging # Promote to staging"
 echo ""
 echo "View hierarchy:"
-echo "  cub unit tree --node=space --filter ${PROJECT}/all --space '*'"
+echo "  cub unit tree --node=space --filter ${PROJECT}-filters/all --space '*'"

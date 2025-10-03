@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: trade-feed
-        image: finos/traderx-trade-feed:latest
+        image: ghcr.io/finos/traderx/trade-feed:latest
         ports:
         - containerPort: 18088
         env:

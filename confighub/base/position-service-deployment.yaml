@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: position-service
-        image: finos/traderx-position-service:latest
+        image: ghcr.io/finos/traderx/position-service:latest
         ports:
         - containerPort: 18090
         env:

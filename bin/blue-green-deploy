@@ -1,0 +1,337 @@
+#!/bin/bash
+set -euo pipefail
+
+# TraderX Blue-Green Deployment - Zero-Downtime Production Deployment
+# Implements blue-green deployment pattern using ConfigHub
+
+# Logging configuration
+LOG_DIR="logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/blue-green-deploy-$(date +%Y%m%d-%H%M%S).log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+timestamp() {
+  date '+%Y-%m-%d %H:%M:%S'
+}
+
+log() {
+  echo "[$(timestamp)] $*"
+}
+
+error() {
+  log "ERROR: $*" >&2
+}
+
+warn() {
+  log "WARN: $*"
+}
+
+info() {
+  log "INFO: $*"
+}
+
+# Trap errors
+trap 'error "Blue-green deployment failed at line $LINENO"; cleanup_on_error; exit 1' ERR
+
+PROJECT=$(bin/proj 2>/dev/null || echo "")
+if [ -z "$PROJECT" ]; then
+  error "Project not found. Run bin/install-base first."
+  exit 1
+fi
+
+# Configuration
+SERVICES_TO_DEPLOY=(
+  "reference-data"
+  "trade-service"
+  "position-service"
+)
+
+# Parse arguments
+SERVICE=$1
+VERSION=${2:-latest}
+ENV=${3:-prod}
+
+if [ -z "$SERVICE" ]; then
+  error "Missing service argument"
+  echo "Usage: bin/blue-green-deploy <service> [version] [environment]"
+  echo ""
+  echo "Services eligible for blue-green:"
+  for svc in "${SERVICES_TO_DEPLOY[@]}"; do
+    echo "  - $svc"
+  done
+  echo ""
+  echo "Examples:"
+  echo "  bin/blue-green-deploy trade-service v2.0.0 prod"
+  echo "  bin/blue-green-deploy reference-data v1.5.2 prod"
+  exit 1
+fi
+
+# Validate service is eligible
+SERVICE_FOUND=false
+for svc in "${SERVICES_TO_DEPLOY[@]}"; do
+  if [ "$svc" == "$SERVICE" ]; then
+    SERVICE_FOUND=true
+    break
+  fi
+done
+
+if [ "$SERVICE_FOUND" == "false" ]; then
+  error "Service $SERVICE is not eligible for blue-green deployment"
+  echo "Eligible services: ${SERVICES_TO_DEPLOY[*]}"
+  exit 1
+fi
+
+# Validate environment
+if [[ ! "$ENV" =~ ^(staging|prod)$ ]]; then
+  error "Blue-green deployment is only for staging or prod (got: $ENV)"
+  exit 1
+fi
+
+SPACE="${PROJECT}-${ENV}"
+NAMESPACE="traderx-${ENV}"
+
+# Production safety check
+if [ "$ENV" == "prod" ]; then
+  warn "PRODUCTION BLUE-GREEN DEPLOYMENT"
+  echo ""
+  echo "⚠️  PRODUCTION DEPLOYMENT CHECKLIST:"
+  echo "  - Service: $SERVICE"
+  echo "  - Version: $VERSION"
+  echo "  - Environment: $ENV"
+  echo "  - Namespace: $NAMESPACE"
+  echo ""
+  echo "Pre-deployment requirements:"
+  echo "  [ ] Version $VERSION tested in staging"
+  echo "  [ ] All tests passed"
+  echo "  [ ] Change request approved"
+  echo "  [ ] Rollback plan reviewed"
+  echo "  [ ] Monitoring alerts configured"
+  echo ""
+  read -p "Type 'DEPLOY' to proceed: " confirmation
+  if [ "$confirmation" != "DEPLOY" ]; then
+    info "Deployment cancelled by user"
+    exit 0
+  fi
+fi
+
+info "Starting blue-green deployment"
+info "Service: $SERVICE"
+info "Version: $VERSION"
+info "Environment: $ENV"
+
+# Determine current color (blue or green)
+CURRENT_COLOR="blue"
+if kubectl get deployment "${SERVICE}-green" -n "$NAMESPACE" &>/dev/null; then
+  # Green exists, check if it's active
+  if kubectl get svc "$SERVICE" -n "$NAMESPACE" -o json | \
+    grep -q "${SERVICE}-green"; then
+    CURRENT_COLOR="green"
+  fi
+fi
+
+NEW_COLOR="green"
+if [ "$CURRENT_COLOR" == "green" ]; then
+  NEW_COLOR="blue"
+fi
+
+info "Current active color: $CURRENT_COLOR"
+info "Deploying to: $NEW_COLOR"
+
+# Cleanup function for errors
+cleanup_on_error() {
+  warn "Deployment failed, cleaning up $NEW_COLOR environment..."
+  kubectl delete deployment "${SERVICE}-${NEW_COLOR}" -n "$NAMESPACE" &>/dev/null || true
+  kubectl delete svc "${SERVICE}-${NEW_COLOR}" -n "$NAMESPACE" &>/dev/null || true
+}
+
+# Phase 1: Deploy green/blue environment
+echo ""
+echo "========================================"
+echo "Phase 1: Deploy $NEW_COLOR Environment"
+echo "========================================"
+info "Creating ${SERVICE}-${NEW_COLOR} deployment..."
+
+# Create ConfigHub unit for new color
+cub unit create "${SERVICE}-${NEW_COLOR}-deployment" \
+  --space "$SPACE" \
+  --type kubernetes/v1/Deployment \
+  --data-file "confighub/base/${SERVICE}-deployment.yaml" \
+  --label service="$SERVICE" \
+  --label color="$NEW_COLOR" \
+  --label version="$VERSION" \
+  || warn "Unit may already exist"
+
+# Update image version
+cub unit update "${SERVICE}-${NEW_COLOR}-deployment" \
+  --space "$SPACE" \
+  --patch \
+  --data "{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"$SERVICE\",\"image\":\"finos/traderx-$SERVICE:$VERSION\"}]}}}}"
+
+# Apply deployment
+cub unit apply "${SERVICE}-${NEW_COLOR}-deployment" \
+  --space "$SPACE" \
+  --target "k8s-${ENV}"
+
+# Wait for deployment to be ready
+info "Waiting for ${SERVICE}-${NEW_COLOR} to be ready..."
+timeout 180 bash -c "
+  until [ \$(kubectl get deployment ${SERVICE}-${NEW_COLOR} -n $NAMESPACE \
+    -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo 0) -gt 0 ]; do
+    sleep 5
+  done
+" || {
+  error "${SERVICE}-${NEW_COLOR} failed to become ready"
+  cleanup_on_error
+  exit 1
+}
+
+info "✓ ${SERVICE}-${NEW_COLOR} is ready"
+
+# Phase 2: Validate green/blue environment
+echo ""
+echo "========================================"
+echo "Phase 2: Validate $NEW_COLOR Environment"
+echo "========================================"
+
+# Run health checks on new color
+info "Running health checks on ${SERVICE}-${NEW_COLOR}..."
+
+NEW_POD=$(kubectl get pods -n "$NAMESPACE" -l "app=${SERVICE}-${NEW_COLOR}" \
+  -o jsonpath='{.items[0].metadata.name}')
+
+if [ -z "$NEW_POD" ]; then
+  error "No pods found for ${SERVICE}-${NEW_COLOR}"
+  cleanup_on_error
+  exit 1
+fi
+
+# Check pod is Running
+POD_STATUS=$(kubectl get pod "$NEW_POD" -n "$NAMESPACE" -o jsonpath='{.status.phase}')
+if [ "$POD_STATUS" != "Running" ]; then
+  error "Pod $NEW_POD is not Running (status: $POD_STATUS)"
+  cleanup_on_error
+  exit 1
+fi
+
+info "✓ $NEW_COLOR environment is healthy"
+
+# Phase 3: Switch traffic to green/blue
+echo ""
+echo "========================================"
+echo "Phase 3: Switch Traffic to $NEW_COLOR"
+echo "========================================"
+
+info "Current service selector targets: $CURRENT_COLOR"
+info "Switching to: $NEW_COLOR"
+
+# Update service selector to point to new color
+kubectl patch svc "$SERVICE" -n "$NAMESPACE" -p \
+  "{\"spec\":{\"selector\":{\"app\":\"${SERVICE}-${NEW_COLOR}\"}}}"
+
+info "✓ Traffic switched to $NEW_COLOR"
+
+# Phase 4: Soak test
+echo ""
+echo "========================================"
+echo "Phase 4: Soak Test ($NEW_COLOR active)"
+echo "========================================"
+
+SOAK_DURATION=300  # 5 minutes
+info "Monitoring $NEW_COLOR for ${SOAK_DURATION}s..."
+info "Checking for errors, restarts, or issues..."
+
+SOAK_START=$(date +%s)
+ERRORS_DETECTED=false
+
+while [ $(($(date +%s) - SOAK_START)) -lt $SOAK_DURATION ]; do
+  # Check for pod restarts
+  RESTARTS=$(kubectl get pods -n "$NAMESPACE" -l "app=${SERVICE}-${NEW_COLOR}" \
+    -o jsonpath='{.items[0].status.containerStatuses[0].restartCount}')
+
+  if [ "$RESTARTS" -gt 0 ]; then
+    error "Pod restarted during soak test (restarts: $RESTARTS)"
+    ERRORS_DETECTED=true
+    break
+  fi
+
+  # Check pod is still Running
+  POD_STATUS=$(kubectl get pod "$NEW_POD" -n "$NAMESPACE" -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")
+  if [ "$POD_STATUS" != "Running" ]; then
+    error "Pod is no longer Running (status: $POD_STATUS)"
+    ERRORS_DETECTED=true
+    break
+  fi
+
+  ELAPSED=$(($(date +%s) - SOAK_START))
+  REMAINING=$((SOAK_DURATION - ELAPSED))
+  info "  Soak test: ${ELAPSED}s elapsed, ${REMAINING}s remaining - Status: OK"
+
+  sleep 30
+done
+
+if [ "$ERRORS_DETECTED" == "true" ]; then
+  error "Soak test failed, rolling back to $CURRENT_COLOR"
+
+  # Instant rollback
+  kubectl patch svc "$SERVICE" -n "$NAMESPACE" -p \
+    "{\"spec\":{\"selector\":{\"app\":\"${SERVICE}-${CURRENT_COLOR}\"}}}"
+
+  info "✓ Traffic rolled back to $CURRENT_COLOR"
+  cleanup_on_error
+  exit 1
+fi
+
+info "✓ Soak test passed"
+
+# Phase 5: Decommission old color
+echo ""
+echo "========================================"
+echo "Phase 5: Decommission $CURRENT_COLOR"
+echo "========================================"
+
+info "Keeping $CURRENT_COLOR warm for 60 seconds in case of issues..."
+sleep 60
+
+info "Scaling down ${SERVICE}-${CURRENT_COLOR}..."
+kubectl scale deployment "${SERVICE}-${CURRENT_COLOR}" -n "$NAMESPACE" --replicas=0 || true
+
+info "Waiting 30 seconds before final cleanup..."
+sleep 30
+
+# Ask for confirmation before final deletion
+echo ""
+read -p "Delete ${SERVICE}-${CURRENT_COLOR} deployment? [y/N]: " delete_old
+if [[ "$delete_old" =~ ^[Yy]$ ]]; then
+  kubectl delete deployment "${SERVICE}-${CURRENT_COLOR}" -n "$NAMESPACE" || true
+  info "✓ ${SERVICE}-${CURRENT_COLOR} deleted"
+else
+  info "Keeping ${SERVICE}-${CURRENT_COLOR} scaled to 0 (manual cleanup needed)"
+fi
+
+# Final summary
+DEPLOYMENT_END=$(date +%s)
+TOTAL_TIME=$((DEPLOYMENT_END - $(date -j -f "%Y-%m-%d %H:%M:%S" "$(head -1 "$LOG_FILE" | cut -d']' -f1 | tr -d '[')" +%s 2>/dev/null || echo 0)))
+
+echo ""
+echo "========================================"
+echo "Blue-Green Deployment Summary"
+echo "========================================"
+echo "Service: $SERVICE"
+echo "Version: $VERSION"
+echo "Environment: $ENV"
+echo "Active color: $NEW_COLOR"
+echo "Total time: ${TOTAL_TIME}s"
+echo ""
+info "Blue-green deployment completed successfully! ✓"
+echo ""
+echo "Active deployment: ${SERVICE}-${NEW_COLOR}"
+echo "Version: $VERSION"
+echo ""
+echo "Monitoring:"
+echo "  kubectl logs deployment/${SERVICE}-${NEW_COLOR} -n $NAMESPACE -f"
+echo "  kubectl get pods -n $NAMESPACE -l app=${SERVICE}-${NEW_COLOR}"
+echo ""
+echo "Rollback (if needed):"
+echo "  bin/rollback $ENV"
+echo ""
+echo "Log file: $LOG_FILE"

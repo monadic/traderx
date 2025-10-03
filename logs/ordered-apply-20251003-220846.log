@@ -1,0 +1,9 @@
+[2025-10-03 22:08:46] INFO: Starting ordered deployment to mellow-muzzle-traderx-dev...
+[2025-10-03 22:08:46] INFO: Log file: logs/ordered-apply-20251003-220846.log
+[2025-10-03 22:08:46] INFO: Applying namespace...
+[2025-10-03 22:08:46] INFO: Attempt 1/3: cub unit apply namespace --space mellow-muzzle-traderx-dev
+Successfully completed Apply on unit namespace (9e966ce3-fe74-4f51-9c5e-88972a294b98)
+[2025-10-03 22:08:49] INFO: Verifying namespace is Active...
+[2025-10-03 22:08:49] INFO: Namespace is Active
+[2025-10-03 22:08:49] INFO: Namespace is Active
+./bin/ordered-apply: line 186: applied[@]: unbound variable

@@ -1,0 +1,249 @@
+#!/bin/bash
+set -euo pipefail
+
+# TraderX Health Check - Validate All Services Are Healthy
+# Performs comprehensive health checks on all TraderX services
+
+# Logging configuration
+LOG_DIR="logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/health-check-$(date +%Y%m%d-%H%M%S).log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+# Timestamp function
+timestamp() {
+  date '+%Y-%m-%d %H:%M:%S'
+}
+
+log() {
+  echo "[$(timestamp)] $*"
+}
+
+error() {
+  log "ERROR: $*" >&2
+}
+
+warn() {
+  log "WARN: $*"
+}
+
+info() {
+  log "INFO: $*"
+}
+
+PROJECT=$(bin/proj 2>/dev/null || echo "")
+if [ -z "$PROJECT" ]; then
+  error "Project not found. Run bin/install-base first."
+  exit 1
+fi
+
+ENV=${1:-dev}
+
+# Validate environment
+if [[ ! "$ENV" =~ ^(dev|staging|prod)$ ]]; then
+  error "Invalid environment: $ENV. Must be dev, staging, or prod"
+  exit 1
+fi
+
+NAMESPACE="traderx-${ENV}"
+SPACE="${PROJECT}-${ENV}"
+
+info "Running health checks for TraderX in $ENV environment"
+info "Namespace: $NAMESPACE"
+info "Space: $SPACE"
+echo ""
+
+# Define services to check
+SERVICES=(
+  "namespace:infrastructure:0"
+  "reference-data:critical:18085"
+  "people-service:high:18089"
+  "account-service:high:18091"
+  "position-service:critical:18090"
+  "trade-service:critical:18092"
+  "trade-processor:high:0"
+  "trade-feed:medium:18088"
+  "web-gui:medium:18080"
+  "ingress:high:0"
+)
+
+# Health check results
+total_checks=0
+passed_checks=0
+failed_checks=0
+warn_checks=0
+
+# Check if namespace exists
+check_namespace() {
+  info "Checking namespace..."
+  if kubectl get namespace "$NAMESPACE" &>/dev/null; then
+    local status=$(kubectl get namespace "$NAMESPACE" -o jsonpath='{.status.phase}')
+    if [ "$status" == "Active" ]; then
+      echo "  ✓ Namespace $NAMESPACE is Active"
+      return 0
+    else
+      echo "  ✗ Namespace $NAMESPACE status: $status"
+      return 1
+    fi
+  else
+    echo "  ✗ Namespace $NAMESPACE not found"
+    return 1
+  fi
+}
+
+# Check deployment health
+check_deployment() {
+  local service=$1
+  local criticality=$2
+  local port=$3
+
+  info "Checking $service (criticality: $criticality)..."
+  total_checks=$((total_checks + 1))
+
+  # Special case for namespace and ingress
+  if [ "$service" == "namespace" ]; then
+    if check_namespace; then
+      passed_checks=$((passed_checks + 1))
+      return 0
+    else
+      failed_checks=$((failed_checks + 1))
+      return 1
+    fi
+  fi
+
+  if [ "$service" == "ingress" ]; then
+    if kubectl get ingress -n "$NAMESPACE" &>/dev/null; then
+      echo "  ✓ Ingress found"
+      passed_checks=$((passed_checks + 1))
+      return 0
+    else
+      echo "  ✗ Ingress not found"
+      failed_checks=$((failed_checks + 1))
+      return 1
+    fi
+  fi
+
+  # Check if deployment exists
+  if ! kubectl get deployment "$service" -n "$NAMESPACE" &>/dev/null; then
+    echo "  ✗ Deployment $service not found"
+    failed_checks=$((failed_checks + 1))
+    return 1
+  fi
+
+  # Get deployment status
+  local desired=$(kubectl get deployment "$service" -n "$NAMESPACE" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
+  local ready=$(kubectl get deployment "$service" -n "$NAMESPACE" -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+  local available=$(kubectl get deployment "$service" -n "$NAMESPACE" -o jsonpath='{.status.availableReplicas}' 2>/dev/null || echo "0")
+  local updated=$(kubectl get deployment "$service" -n "$NAMESPACE" -o jsonpath='{.status.updatedReplicas}' 2>/dev/null || echo "0")
+
+  echo "  Status: $ready/$desired ready, $available available, $updated updated"
+
+  # Check replica status
+  if [ "$ready" -eq "$desired" ] && [ "$available" -eq "$desired" ]; then
+    echo "  ✓ All replicas ready"
+  elif [ "$ready" -gt 0 ]; then
+    echo "  ⚠ Some replicas ready ($ready/$desired)"
+    warn_checks=$((warn_checks + 1))
+  else
+    echo "  ✗ No replicas ready (0/$desired)"
+    failed_checks=$((failed_checks + 1))
+    return 1
+  fi
+
+  # Check for pod errors
+  local failed_pods=$(kubectl get pods -n "$NAMESPACE" -l "app=$service" \
+    --field-selector=status.phase=Failed 2>/dev/null | grep -c "$service" || echo "0")
+  if [ "$failed_pods" -gt 0 ]; then
+    echo "  ✗ $failed_pods failed pods detected"
+    kubectl get pods -n "$NAMESPACE" -l "app=$service" --field-selector=status.phase=Failed
+    failed_checks=$((failed_checks + 1))
+    return 1
+  fi
+
+  # Check for pod restarts
+  local restart_count=$(kubectl get pods -n "$NAMESPACE" -l "app=$service" -o json 2>/dev/null | \
+    jq -r '.items[].status.containerStatuses[]?.restartCount // 0' | \
+    awk '{sum+=$1} END {print sum+0}')
+  if [ "$restart_count" -gt 3 ]; then
+    echo "  ⚠ High restart count: $restart_count restarts"
+    warn_checks=$((warn_checks + 1))
+  fi
+
+  # Check service health endpoint if port is available
+  if [ "$port" != "0" ]; then
+    local service_ip=$(kubectl get svc "$service" -n "$NAMESPACE" -o jsonpath='{.spec.clusterIP}' 2>/dev/null || echo "")
+    if [ -n "$service_ip" ]; then
+      echo "  ✓ Service $service has ClusterIP: $service_ip:$port"
+
+      # Try to check health endpoint from within cluster
+      if timeout 5 kubectl run health-check-pod --rm -i --restart=Never --image=curlimages/curl:latest \
+        -- curl -s -f "http://$service.$NAMESPACE.svc.cluster.local:$port/health" &>/dev/null; then
+        echo "  ✓ Health endpoint responding"
+      else
+        echo "  ⚠ Health endpoint not accessible (may be expected if no /health endpoint)"
+        warn_checks=$((warn_checks + 1))
+      fi
+    fi
+  fi
+
+  # Check ConfigHub live state
+  if cub unit get-live-state "$service-deployment" --space "$SPACE" &>/dev/null; then
+    local live_status=$(cub unit get-live-state "$service-deployment" --space "$SPACE" 2>/dev/null | \
+      jq -r '.Status // "Unknown"')
+    echo "  ConfigHub live state: $live_status"
+  fi
+
+  passed_checks=$((passed_checks + 1))
+  return 0
+}
+
+# Run health checks for all services
+echo "========================================"
+echo "TraderX Health Check Report"
+echo "========================================"
+echo "Environment: $ENV"
+echo "Namespace: $NAMESPACE"
+echo "Time: $(timestamp)"
+echo ""
+
+for service_info in "${SERVICES[@]}"; do
+  IFS=':' read -r service criticality port <<< "$service_info"
+  check_deployment "$service" "$criticality" "$port" || true
+  echo ""
+done
+
+# Summary
+echo "========================================"
+echo "Health Check Summary"
+echo "========================================"
+echo "Total checks: $total_checks"
+echo "Passed: $passed_checks ✓"
+echo "Warnings: $warn_checks ⚠"
+echo "Failed: $failed_checks ✗"
+echo ""
+
+# Overall status
+if [ $failed_checks -eq 0 ] && [ $warn_checks -eq 0 ]; then
+  info "Overall status: HEALTHY ✓"
+  echo "All services are running optimally."
+  echo ""
+  echo "Log file: $LOG_FILE"
+  exit 0
+elif [ $failed_checks -eq 0 ]; then
+  warn "Overall status: DEGRADED ⚠"
+  echo "All services are running but with warnings."
+  echo ""
+  echo "Log file: $LOG_FILE"
+  exit 0
+else
+  error "Overall status: UNHEALTHY ✗"
+  echo "Some services are not running correctly."
+  echo ""
+  echo "Troubleshooting commands:"
+  echo "  kubectl get all -n $NAMESPACE"
+  echo "  kubectl describe deployment <service-name> -n $NAMESPACE"
+  echo "  kubectl logs deployment/<service-name> -n $NAMESPACE"
+  echo ""
+  echo "Log file: $LOG_FILE"
+  exit 1
+fi

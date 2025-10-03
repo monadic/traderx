@@ -1,110 +1,278 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-# TraderX ConfigHub - Apply Services in Dependency Order
-# Ensures reference-data starts before dependent services
+# TraderX ConfigHub - Apply Services in Dependency Order (Production-Ready)
+# Ensures reference-data starts before dependent services with comprehensive error handling
+
+# Logging configuration
+LOG_DIR="logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/ordered-apply-$(date +%Y%m%d-%H%M%S).log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+# Timestamp function
+timestamp() {
+  date '+%Y-%m-%d %H:%M:%S'
+}
+
+log() {
+  echo "[$(timestamp)] $*"
+}
+
+error() {
+  log "ERROR: $*" >&2
+}
+
+warn() {
+  log "WARN: $*"
+}
+
+info() {
+  log "INFO: $*"
+}
+
+# Trap errors
+trap 'error "Script failed at line $LINENO with exit code $?"; exit 1' ERR
 
 PROJECT=$(bin/proj)
 if [ -z "$PROJECT" ]; then
-  echo "ERROR: Project not found. Run bin/install-base first."
+  error "Project not found. Run bin/install-base first."
   exit 1
 fi
 
 ENV=$1
 if [ -z "$ENV" ]; then
+  error "Missing environment argument"
   echo "Usage: bin/ordered-apply <environment>"
   echo "  Environments: dev, staging, prod"
   exit 1
 fi
 
+# Validate environment
+if [[ ! "$ENV" =~ ^(dev|staging|prod)$ ]]; then
+  error "Invalid environment: $ENV. Must be dev, staging, or prod"
+  exit 1
+fi
+
 SPACE="${PROJECT}-${ENV}"
-echo "🚀 Applying TraderX services in dependency order to $SPACE..."
+info "Starting ordered deployment to $SPACE..."
+info "Log file: $LOG_FILE"
 
-# Define service dependencies and order
-declare -A dependencies
-dependencies["reference-data"]=""  # No dependencies, starts first
-dependencies["people-service"]="reference-data"
-dependencies["account-service"]="reference-data people-service"
-dependencies["position-service"]="reference-data account-service"
-dependencies["trade-service"]="reference-data account-service position-service"
-dependencies["trade-processor"]="trade-service"
-dependencies["trade-feed"]="trade-service"
-dependencies["web-gui"]="trade-service people-service account-service"
+# Define deployment order based on dependencies
+# Using simple array since bash 3.2 doesn't support associative arrays
+deployment_order=(
+  "reference-data"
+  "people-service"
+  "account-service"
+  "position-service"
+  "trade-service"
+  "trade-processor"
+  "trade-feed"
+  "web-gui"
+)
 
-# Function to check if a service is ready
-check_service_ready() {
-  local service=$1
-  echo -n "  Waiting for $service to be ready..."
+# Retry configuration
+MAX_RETRIES=3
+RETRY_DELAY=5
+HEALTH_CHECK_TIMEOUT=120
+HEALTH_CHECK_INTERVAL=5
 
-  for i in {1..30}; do
-    # Check if deployment has at least 1 ready replica
-    ready=$(kubectl get deployment $service -n traderx-${ENV} -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
-    if [ "$ready" -gt 0 ]; then
-      echo " ✓"
+# Function to retry commands with exponential backoff
+retry_with_backoff() {
+  local max_attempts=$1
+  shift
+  local cmd="$@"
+  local attempt=1
+  local delay=$RETRY_DELAY
+
+  while [ $attempt -le $max_attempts ]; do
+    info "Attempt $attempt/$max_attempts: $cmd"
+    if eval "$cmd"; then
       return 0
     fi
-    sleep 2
-    echo -n "."
+
+    if [ $attempt -lt $max_attempts ]; then
+      warn "Command failed, retrying in ${delay}s..."
+      sleep $delay
+      delay=$((delay * 2))  # Exponential backoff
+    fi
+    attempt=$((attempt + 1))
   done
 
-  echo " ⚠️ (timeout, continuing anyway)"
+  error "Command failed after $max_attempts attempts: $cmd"
+  return 1
+}
+
+# Function to check if a service is ready with enhanced health checks
+check_service_ready() {
+  local service=$1
+  local namespace="traderx-${ENV}"
+  local timeout=$HEALTH_CHECK_TIMEOUT
+  local elapsed=0
+
+  info "Waiting for $service to be ready (timeout: ${timeout}s)..."
+
+  while [ $elapsed -lt $timeout ]; do
+    # Check if deployment exists
+    if ! kubectl get deployment "$service" -n "$namespace" &>/dev/null; then
+      warn "Deployment $service not found yet, waiting..."
+      sleep $HEALTH_CHECK_INTERVAL
+      elapsed=$((elapsed + HEALTH_CHECK_INTERVAL))
+      continue
+    fi
+
+    # Check deployment status
+    local desired=$(kubectl get deployment "$service" -n "$namespace" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
+    local ready=$(kubectl get deployment "$service" -n "$namespace" -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+    local available=$(kubectl get deployment "$service" -n "$namespace" -o jsonpath='{.status.availableReplicas}' 2>/dev/null || echo "0")
+
+    info "  $service status: $ready/$desired ready, $available available"
+
+    # Check if all replicas are ready and available
+    if [ "$ready" -gt 0 ] && [ "$ready" -eq "$desired" ] && [ "$available" -eq "$desired" ]; then
+      info "  $service is READY"
+      return 0
+    fi
+
+    # Check for pod errors
+    local failed_pods=$(kubectl get pods -n "$namespace" -l "app=$service" \
+      --field-selector=status.phase=Failed 2>/dev/null | grep -c "$service" || echo "0")
+    if [ "$failed_pods" -gt 0 ]; then
+      error "  $service has $failed_pods failed pods"
+      kubectl get pods -n "$namespace" -l "app=$service" || true
+      return 1
+    fi
+
+    sleep $HEALTH_CHECK_INTERVAL
+    elapsed=$((elapsed + HEALTH_CHECK_INTERVAL))
+  done
+
+  error "  $service failed to become ready within ${timeout}s"
+  kubectl describe deployment "$service" -n "$namespace" || true
+  kubectl get pods -n "$namespace" -l "app=$service" || true
   return 1
 }
 
 # Apply namespace first
-echo "📦 Applying namespace..."
-cub unit apply namespace --space $SPACE --target k8s-${ENV} || true
+info "Applying namespace..."
+if ! retry_with_backoff $MAX_RETRIES "cub unit apply namespace --space $SPACE"; then
+  error "Failed to apply namespace after $MAX_RETRIES attempts"
+  exit 1
+fi
+
+# Verify namespace is Active
+info "Verifying namespace is Active..."
+max_wait=60
+elapsed=0
+while [ $elapsed -lt $max_wait ]; do
+  if kubectl get namespace traderx-${ENV} 2>/dev/null | grep -q Active; then
+    info "Namespace is Active"
+    break
+  fi
+  sleep 2
+  elapsed=$((elapsed + 2))
+done
+
+if [ $elapsed -ge $max_wait ]; then
+  error "Namespace did not become Active after ${max_wait} seconds"
+  exit 1
+fi
+info "Namespace is Active"
 
 # Apply services in order
-applied=()
+applied=""
+failed_services=""
 
 apply_service() {
   local service=$1
 
   # Check if already applied
-  for s in "${applied[@]}"; do
-    [ "$s" == "$service" ] && return 0
-  done
-
-  # Apply dependencies first
-  local deps="${dependencies[$service]}"
-  if [ -n "$deps" ]; then
-    for dep in $deps; do
-      apply_service $dep
-    done
+  if echo "$applied" | grep -q "\<$service\>"; then
+    return 0
   fi
 
-  echo "📦 Applying $service..."
+  # Dependencies are handled by the ordered list
 
-  # Apply deployment
-  cub unit apply ${service}-deployment --space $SPACE --target k8s-${ENV} || true
+  info "Applying $service..."
+
+  # Apply deployment with retry
+  if ! retry_with_backoff $MAX_RETRIES "cub unit apply ${service}-deployment --space $SPACE"; then
+    error "Failed to apply ${service}-deployment"
+    failed_services="$failed_services $service"
+    return 1
+  fi
 
   # Apply service if it exists
   if cub unit get ${service}-service --space $SPACE &>/dev/null; then
-    cub unit apply ${service}-service --space $SPACE --target k8s-${ENV} || true
+    if ! retry_with_backoff $MAX_RETRIES "cub unit apply ${service}-service --space $SPACE"; then
+      warn "Failed to apply ${service}-service, but continuing..."
+    fi
   fi
 
   # Wait for service to be ready before continuing
-  check_service_ready $service
+  if ! check_service_ready "$service"; then
+    error "$service failed health check"
+    failed_services="$failed_services $service"
+    return 1
+  fi
 
   # Mark as applied
-  applied+=("$service")
+  applied="$applied $service"
+  info "$service successfully deployed and healthy"
 }
 
+# Track deployment start time
+DEPLOYMENT_START=$(date +%s)
+
 # Apply all services in dependency order
-for service in reference-data people-service account-service position-service trade-service trade-processor trade-feed web-gui; do
-  apply_service $service
+for service in "${deployment_order[@]}"; do
+  if ! apply_service "$service"; then
+    error "Failed to deploy $service - stopping deployment"
+    break
+  fi
 done
 
 # Apply ingress last
-echo "📦 Applying ingress..."
-cub unit apply ingress --space $SPACE --target k8s-${ENV} || true
+info "Applying ingress..."
+if ! retry_with_backoff $MAX_RETRIES "cub unit apply ingress --space $SPACE"; then
+  warn "Failed to apply ingress, but services are deployed"
+fi
 
-echo "✅ All services deployed in order!"
+# Calculate deployment time
+DEPLOYMENT_END=$(date +%s)
+DEPLOYMENT_TIME=$((DEPLOYMENT_END - DEPLOYMENT_START))
+
+# Final status report
+echo ""
+echo "========================================"
+echo "Deployment Summary"
+echo "========================================"
+echo "Environment: $ENV"
+echo "Space: $SPACE"
+echo "Deployment time: ${DEPLOYMENT_TIME}s"
+echo "Services deployed: $(echo $applied | wc -w | tr -d ' ')"
+echo "Failed services: $(echo $failed_services | wc -w | tr -d ' ')"
+
+if [ -n "$failed_services" ]; then
+  echo ""
+  error "The following services failed to deploy:"
+  for service in $failed_services; do
+    echo "  - $service"
+  done
+  echo ""
+  echo "Rollback command:"
+  echo "  bin/rollback $ENV"
+  exit 1
+fi
+
+info "All services deployed successfully!"
 echo ""
 echo "Check deployment status:"
 echo "  kubectl get all -n traderx-${ENV}"
+echo "  bin/health-check $ENV"
 echo ""
 echo "Access the application:"
 echo "  kubectl port-forward -n traderx-${ENV} svc/web-gui 18080:18080"
 echo "  open http://localhost:18080"
+echo ""
+echo "Log file: $LOG_FILE"
