@@ -1,6 +1,14 @@
-# Global-App vs Simplified Pattern - Visual Comparison
 
-## 🔴 Global-App Pattern (Confusing)
+## Global-App Mental Model
+"I have a project with a generated prefix that contains spaces for filters, base configs, and infrastructure, plus environment spaces that clone from each other with upstream relationships, and units have labels that match filter WHERE clauses..."
+
+## Simplified Mental Model
+"I have one space per environment. Units go in spaces. Deploy with apply."
+
+
+# Visual Comparison
+
+## 🔴 Global-App Pattern 
 
 ```
 cub space new-prefix → "chubby-paws"  (What? Why not just "myapp"?)
@@ -45,7 +53,7 @@ Filters:
 
 ---
 
-## ✅ Simplified Pattern (Clear)
+## ✅ Simplified Pattern 
 
 ```
 Project: traderx (Just pick a name!)
@@ -126,7 +134,7 @@ cub space create ${PROJECT}-prod
 
 ### Adding a Service
 
-**Global-App (Complex):**
+**Global-App:**
 ```bash
 # Add to base with label
 cub unit create --space $project-base backend \
@@ -147,7 +155,7 @@ cub unit create backend \
   --upstream-unit backend
 ```
 
-**Simplified (Clear):**
+**Simplified:**
 ```bash
 # Add to dev
 cub unit create app-backend \
@@ -164,7 +172,7 @@ cub unit copy app-backend \
 
 ### Finding Services
 
-**Global-App (Complex):**
+**Global-App:**
 ```bash
 # Need to use filters with WHERE clauses
 cub unit list --filter $project/app
@@ -174,7 +182,7 @@ cub unit list --space $project-qa \
   --where "Labels.type='app' AND Labels.targetable='true'"
 ```
 
-**Simplified (Clear):**
+**Simplified:**
 ```bash
 # Just use grep!
 cub unit list --space traderx-dev | grep "^app-"
@@ -187,7 +195,7 @@ cub unit list --space traderx-dev
 
 ### Promoting Changes
 
-**Global-App (Complex):**
+**Global-App:**
 ```bash
 # Use push-upgrade through chain
 cub unit update backend \
@@ -198,7 +206,7 @@ cub unit update backend \
 # But only if upstream relationships are correct!
 ```
 
-**Simplified (Clear):**
+**Simplified:**
 ```bash
 # Explicit copy (you control exactly what happens)
 cub unit get app-backend --space traderx-dev > /tmp/backend.yaml
@@ -212,17 +220,8 @@ done
 
 ---
 
-## 🎯 Mental Models
 
-### Global-App Mental Model
-"I have a project with a generated prefix that contains spaces for filters, base configs, and infrastructure, plus environment spaces that clone from each other with upstream relationships, and units have labels that match filter WHERE clauses..."
 
-**Time to understand: Hours/Days**
-
-### Simplified Mental Model
-"I have one space per environment. Units go in spaces. Deploy with apply."
-
-**Time to understand: 5 minutes**
 
 ---
 
@@ -251,28 +250,3 @@ for space in $OLD_PREFIX ${OLD_PREFIX}-base ${OLD_PREFIX}-infra \
   cub space delete $space --recursive
 done
 ```
-
----
-
-## 📈 Complexity Metrics
-
-| Metric | Global-App | Simplified | Reduction |
-|--------|-----------|------------|-----------|
-| **Spaces** | 6+ | 3 | -50% |
-| **Concepts** | 8+ (spaces, units, labels, filters, WHERE, upstream, prefix...) | 3 (space, unit, apply) | -63% |
-| **Lines to deploy** | 50+ | 10 | -80% |
-| **Time to understand** | Hours | Minutes | -95% |
-| **Documentation needed** | Pages | Paragraph | -90% |
-
----
-
-## 🏆 Winner: Simplified Pattern
-
-The simplified pattern:
-- ✅ **Easier to learn** - New users productive in minutes
-- ✅ **Easier to debug** - Everything is explicit
-- ✅ **Easier to maintain** - No hidden relationships
-- ✅ **Easier to automate** - Simple scripts, no magic
-- ✅ **Easier to document** - "One space per environment"
-
-**The best abstraction is often no abstraction.**
