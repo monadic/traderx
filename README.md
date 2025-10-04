@@ -32,24 +32,31 @@ TraderX includes 8 microservices:
 
 **Project Name**: `mellow-muzzle-traderx`
 **ConfigHub Spaces**: 5 created (base, dev, staging, prod, filters)
-**Units Deployed**: 60 across all environments
-**Deployment Status**: ConfigHub infrastructure complete, Kubernetes deployment blocked by Docker
-**Security Score**: 68/100 (Development environment)
-**Code Quality**: 82/100
-**Test Coverage**: 88.6%
+**Units Deployed**: 62 across all environments (including new service-account and deployment units)
+**Deployment Status**: ✅ **WORKING** - reference-data service successfully running in Kubernetes via ConfigHub
+**Worker Status**: ✅ Running in confighub namespace
+**Target**: ✅ k8s-mellow-muzzle-traderx-worker-dev configured and associated
 
-### What's Working
-- ✅ ConfigHub infrastructure fully deployed
-- ✅ Environment hierarchy (base → dev → staging → prod)
-- ✅ Filters and sets for targeting
-- ✅ Enhanced deployment scripts (health-check, rollback, validate-deployment, blue-green-deploy)
-- ✅ Comprehensive test suite
-- ✅ Security and code reviews completed
+### ✅ What's Working (UPDATED 2025-10-03)
+- ✅ **ConfigHub Worker installed and running** - Bridge between ConfigHub and Kubernetes
+- ✅ **Target created and associated** - All units linked to k8s-mellow-muzzle-traderx-worker-dev
+- ✅ **Reference-data service deployed** - Running healthy (1/1 Ready) in traderx-dev namespace
+- ✅ **All template variables fixed** - Removed Go template syntax, using static values
+- ✅ **Docker images corrected** - Using ghcr.io/finos/traderx/ instead of Docker Hub
+- ✅ **Health probes fixed** - Adjusted for NestJS (/health) instead of Spring Boot paths
+- ✅ **Service account created** - traderx-service-account in place
+- ✅ **Deployment scripts fixed** - Compatible with bash 3.2 (macOS default)
+- ✅ **ConfigHub pattern working** - Worker → Target → Unit → Apply chain functional
 
-### Known Limitations
-- ❌ Kubernetes deployment blocked (Docker not running on deployment host)
+### 🚧 In Progress
+- 🔄 Deploying remaining 7 services (people-service, account-service, etc.)
+- 🔄 Setting up service mesh communication between microservices
+- 🔄 Configuring ingress for external access
+
+### Known Issues (Being Fixed)
+- ⚠️ Worker timeout on some deployments (increasing timeout values)
+- ⚠️ Some services need health probe adjustments for their specific frameworks
 - ⚠️ Security remediations required before production (see SECURITY-REVIEW.md)
-- ⚠️ Minor code improvements recommended (see CODE-REVIEW.md)
 
 ## 🚀 Quick Start
 
@@ -63,25 +70,31 @@ TraderX includes 8 microservices:
 ### Deploy to Development
 
 ```bash
-# 0. Ensure Docker is running
-docker info  # Should succeed
+# QUICK FIX (if deployment was previously attempted and failed)
+bin/quick-fix         # Installs worker, creates target, fixes associations
+
+# OR FULL SETUP from scratch:
 
 # 1. Create ConfigHub structure
 bin/install-base      # Creates spaces, units, filters
 bin/install-envs      # Creates dev/staging/prod hierarchy
 
-# 2. Deploy to Kubernetes
-bin/apply-all dev     # Deploy all 8 services to dev
+# 2. Install ConfigHub Worker (CRITICAL - must do this!)
+bin/setup-worker dev  # Installs worker and creates target
 
-# 3. Validate deployment
-bin/validate-deployment dev  # Comprehensive validation
+# 3. Deploy to Kubernetes
+bin/ordered-apply dev # Deploy all 8 services in dependency order
 
-# 4. Access the application
+# 4. Check deployment status
+kubectl get pods -n traderx-dev
+# Should show: reference-data-xxx   1/1     Running
+
+# 5. Access the application (once all services are running)
 kubectl port-forward -n traderx-dev svc/web-gui 18080:18080
 open http://localhost:18080
 
-# 5. View in ConfigHub
-cub unit tree --node=space --filter mellow-muzzle-traderx --space '*'
+# 6. View in ConfigHub
+cub unit list --space mellow-muzzle-traderx-dev
 ```
 
 ### Promote to Staging
@@ -252,11 +265,39 @@ kubectl logs -n traderx-dev -l app=trade-service --follow
 kubectl logs -n traderx-dev -l app=confighub-worker --follow
 ```
 
+## 🛠️ Recent Fixes (2025-10-03)
+
+The following critical issues were identified and fixed:
+
+1. **Missing Worker-Target Association**: ConfigHub requires Worker → Target → Unit chain
+   - Fix: Created `bin/quick-fix` script that properly installs worker and associates units
+
+2. **Docker Image URLs Wrong**: Images were pointing to Docker Hub instead of GitHub Container Registry
+   - Fix: Changed all images from `finos/traderx-*` to `ghcr.io/finos/traderx/*`
+
+3. **Template Variables Not Supported**: ConfigHub doesn't process Go templates ({{ .Variable }})
+   - Fix: Replaced all template variables with actual values
+
+4. **Health Probes Incorrect**: Used Spring Boot actuator paths for NestJS services
+   - Fix: Changed to `/health` endpoint on correct ports
+
+5. **Bash Compatibility**: Scripts used bash 4.0+ features not available in macOS bash 3.2
+   - Fix: Removed associative arrays, fixed array operations
+
+6. **Missing Service Account**: Pods couldn't start without traderx-service-account
+   - Fix: Created service-account.yaml and deployed it first
+
 ## 🔧 Troubleshooting
 
 See [RUNBOOK.md](RUNBOOK.md) for comprehensive troubleshooting procedures.
 
 ### Quick Fixes
+
+**If you see "missing TargetID on Unit" error**
+```bash
+# Run the quick fix script
+bin/quick-fix
+```
 
 **Docker not running**
 ```bash
