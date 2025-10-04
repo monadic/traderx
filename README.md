@@ -1,16 +1,15 @@
 # TraderX - ConfigHub Deployment
 
-A ConfigHub-native deployment of FINOS TraderX sample trading application, demonstrating the [DevOps as Apps](https://github.com/monadic/devops-as-apps-project) pattern.
+A ConfigHub-native deployment of FINOS TraderX sample trading application, using the patterns tested in [DevOps as Apps](https://github.com/monadic/devops-as-apps-project).
 
 ## 🎯 Overview
 
 This repository shows how to deploy the [FINOS TraderX](https://github.com/finos/traderX) sample trading application using ConfigHub instead of traditional kubectl/Tilt approaches. TraderX consists of 8 microservices that simulate a trading platform.
 
-**Key Benefits:**
-- ✅ **ConfigHub-native deployment** - No kubectl, pure `cub unit apply`
+**ConfigHub Patterns:**
+- ✅ **ConfigHub-native deployment** - Use `cub unit apply` instead of kubectl
 - ✅ **Environment hierarchy** - Dev → Staging → Prod with push-upgrade
-- ✅ **ConfigHub workers** - Replace Tilt for auto-deployment
-- ✅ **DevOps as Apps ready** - Integrates with drift-detector, cost-optimizer
+- ✅ **ConfigHub workers** - auto-deployment (replaces Tilt)
 - ✅ **Full audit trail** - Every config change tracked in ConfigHub
 
 ## 📦 Services
@@ -177,7 +176,7 @@ cub run set-image-reference \
 
 ## 🤖 DevOps as Apps Integration
 
-This deployment integrates with the [DevOps as Apps](https://github.com/monadic/devops-examples) platform:
+This deployment integrates with these [DevOps as Apps](https://github.com/monadic/devops-examples) tools:
 
 ### Drift Detection
 ```bash
