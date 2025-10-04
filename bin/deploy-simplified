@@ -1,0 +1,85 @@
+#!/bin/bash
+# Simplified deployment - no complex dependency management
+
+set -euo pipefail
+
+PROJECT=$(cat .cub-project 2>/dev/null || echo "traderx")
+ENV=${1:-dev}
+SPACE="${PROJECT}-${ENV}"
+
+echo "==================================="
+echo "Simplified Deployment"
+echo "Space: $SPACE"
+echo "==================================="
+echo ""
+
+# Check space exists
+if ! cub space get $SPACE &>/dev/null; then
+  echo "❌ Space $SPACE does not exist!"
+  echo "Run: ./bin/install-simplified first"
+  exit 1
+fi
+
+# Simple deployment order (no complex dependency tracking!)
+echo "Deploying in order..."
+echo ""
+
+# Group 1: Namespace and auth
+echo "📁 Setting up namespace and auth..."
+cub unit apply namespace --space $SPACE || echo "  namespace may already exist"
+cub unit apply service-account --space $SPACE || echo "  service-account may already exist"
+sleep 5
+
+# Group 2: Databases and core services
+echo ""
+echo "💾 Deploying data services..."
+for unit in $(cub unit list --space $SPACE | grep "^app-reference-data\|^app-people" | awk '{print $1}'); do
+  echo "  Deploying $unit..."
+  cub unit apply $unit --space $SPACE || echo "    Failed to deploy $unit"
+done
+
+# Group 3: Business services
+echo ""
+echo "💼 Deploying business services..."
+for unit in $(cub unit list --space $SPACE | grep "^app-account\|^app-position\|^app-trade" | awk '{print $1}'); do
+  echo "  Deploying $unit..."
+  cub unit apply $unit --space $SPACE || echo "    Failed to deploy $unit"
+done
+
+# Group 4: Frontend
+echo ""
+echo "🌐 Deploying frontend..."
+cub unit apply app-web-gui --space $SPACE || echo "  Failed to deploy web-gui"
+
+# Group 5: Services (can deploy in parallel since deployments exist)
+echo ""
+echo "🔌 Deploying service endpoints..."
+for unit in $(cub unit list --space $SPACE | grep "^svc-" | awk '{print $1}'); do
+  echo "  Deploying $unit..."
+  cub unit apply $unit --space $SPACE &
+done
+wait  # Wait for all services to deploy
+
+# Group 6: Infrastructure
+echo ""
+echo "🏗️ Deploying infrastructure..."
+for unit in $(cub unit list --space $SPACE | grep "^infra-" | awk '{print $1}'); do
+  echo "  Deploying $unit..."
+  cub unit apply $unit --space $SPACE || echo "    Failed to deploy $unit"
+done
+
+echo ""
+echo "==================================="
+echo "✅ Deployment Complete!"
+echo "==================================="
+echo ""
+echo "Check status:"
+echo "  kubectl get pods -n traderx-${ENV}"
+echo ""
+echo "View units:"
+echo "  cub unit list --space $SPACE"
+echo ""
+
+# Show what was deployed
+deployed_count=$(cub unit list --space $SPACE | grep -v NAME | wc -l)
+echo "Deployed $deployed_count units to $SPACE"
