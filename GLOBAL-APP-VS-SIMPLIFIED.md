@@ -1,5 +1,5 @@
 
-## Global-App Mental Model
+## Current Mental Model
 "I have a project with a generated prefix that contains spaces for filters, base configs, and infrastructure, plus environment spaces that clone from each other with upstream relationships, and units have labels that match filter WHERE clauses..."
 
 ## Simplified Mental Model
@@ -8,7 +8,7 @@
 
 # Visual Comparison
 
-## 🔴 Global-App Pattern 
+## 🔴 Current Pattern 
 
 ```
 cub space new-prefix → "chubby-paws"  (What? Why not just "myapp"?)
