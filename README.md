@@ -4,7 +4,7 @@ A ConfigHub-native deployment of FINOS TraderX sample trading application, using
 
 ## 🎯 Overview
 
-This repository shows how to deploy the [FINOS TraderX](https://github.com/finos/traderX) sample trading application using ConfigHub instead of traditional kubectl/Tilt approaches. TraderX consists of 8 microservices that simulate a trading platform.
+This repository shows how to deploy the [FINOS TraderX](https://github.com/finos/traderX) sample trading application using ConfigHub. TraderX consists of 8 microservices that simulate a trading platform.  Each microservice can be a config unit like in the [Global App pattern](https://github.com/confighub/examples/blob/main/global-app/README.md).
 
 **ConfigHub Patterns:**
 - ✅ **ConfigHub-native deployment** - Use `cub unit apply` instead of kubectl
