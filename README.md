@@ -222,7 +222,7 @@ This deployment demonstrates all 12 canonical ConfigHub patterns:
 11. **Revision Management** - Full history and rollback
 12. **Link Management** - Connect services to infrastructure
 
-See [docs/DEPLOYMENT-PATTERNS.md](docs/DEPLOYMENT-PATTERNS.md) for details.
+See [DevOps as Apps docs]([docs/DEPLOYMENT-PATTERNS.md](https://github.com/monadic/devops-as-apps-project/tree/main)) for details.
 
 ## 🧪 Testing
 
