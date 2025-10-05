@@ -15,21 +15,21 @@ That's it. Everything else is details.
 
 ---
 
-## Stage 1: Hello World (2 min)
+## Stage 1: Hello TraderX (2 min)
 
 ```bash
 # setup-structure
-cub space create app
-cub unit create web --space app --data nginx.yaml
+cub space create traderx
+cub unit create reference-data --space traderx --data reference-data.yaml
 
 # deploy
-cub worker install worker --space app --wait
-cub unit apply web --space app
+cub worker install worker --space traderx --wait
+cub unit apply reference-data --space traderx
 ```
 
 ```
-app/
-└── web (nginx)
+traderx/
+└── reference-data (market data service)
 ```
 
 ✅ **Essence**: Space contains units. Worker deploys them.
@@ -41,147 +41,170 @@ app/
 ```bash
 # setup-structure
 for env in dev staging prod; do
-  cub space create $env
-  cub unit copy web --from app --to $env
+  cub space create traderx-$env
+  cub unit copy reference-data --from traderx --to traderx-$env
 done
 
 # deploy (just prod)
-cub worker install worker --space prod --wait
-cub unit apply web --space prod
+cub worker install worker --space traderx-prod --wait
+cub unit apply reference-data --space traderx-prod
 ```
 
 ```
-dev/
-├── web (copied)
-staging/
-├── web (copied)
-prod/
-└── web (deployed) ✓
+traderx-dev/
+├── reference-data (copied)
+traderx-staging/
+├── reference-data (copied)
+traderx-prod/
+└── reference-data (deployed) ✓
 ```
 
 ✅ **Essence**: Spaces are environments. Copy promotes config.
 
 ---
 
-## Stage 3: Three Regions, Three Variations (5 min)
+## Stage 3: Three Regions, Three Trading Volumes (5 min)
 
-**The Power Move**: Same app, different configs per region.
+**The Power Move**: Same trading platform, different scale per region.
 
 ```bash
 # setup-structure
+# Now add trade-service (handles actual trades)
+cub unit create trade-service --space traderx-prod --data trade-service.yaml
+
 for region in us eu asia; do
-  cub space create prod-$region
-  cub unit copy web --from prod --to prod-$region
+  cub space create traderx-prod-$region
+  cub unit copy reference-data --from traderx-prod --to traderx-prod-$region
+  cub unit copy trade-service --from traderx-prod --to traderx-prod-$region
 done
 
-# Customize per region (the magic!)
-cub unit update web --space prod-us --patch '{"replicas": 3}'    # Normal
-cub unit update web --space prod-eu --patch '{"replicas": 5}'    # GDPR needs more
-cub unit update web --space prod-asia --patch '{"replicas": 2}'  # Cost savings
+# Customize per region based on trading volume!
+cub unit update trade-service --space traderx-prod-us \
+  --patch '{"replicas": 3}'    # NYSE hours = normal volume
+
+cub unit update trade-service --space traderx-prod-eu \
+  --patch '{"replicas": 5}'    # London + Frankfurt = high volume
+
+cub unit update trade-service --space traderx-prod-asia \
+  --patch '{"replicas": 2}'    # Tokyo overnight = low volume
 
 # deploy all regions
 for region in us eu asia; do
-  cub unit apply web --space prod-$region
+  cub unit apply --space traderx-prod-$region --where "*"
 done
 ```
 
 ```
-prod-us/
-└── web (replicas: 3) ✓
+traderx-prod-us/
+├── reference-data (replicas: 1)
+└── trade-service (replicas: 3) ✓  # NYSE hours
 
-prod-eu/
-└── web (replicas: 5) ✓  # Different!
+traderx-prod-eu/
+├── reference-data (replicas: 1)
+└── trade-service (replicas: 5) ✓  # Peak trading!
 
-prod-asia/
-└── web (replicas: 2) ✓  # Different!
+traderx-prod-asia/
+├── reference-data (replicas: 1)
+└── trade-service (replicas: 2) ✓  # Overnight trading
 ```
 
-✅ **Essence**: Each region has custom config. No templates needed.
+✅ **Essence**: Each region has custom scale. Real business logic!
 
 ---
 
-## Stage 4: Push Changes, Keep Customizations
+## Stage 4: Push Changes, Keep Regional Scale
 
 **The Killer Feature**: Update base → flows everywhere, keeps local changes.
 
 ```bash
 # Create base + regions with inheritance
-cub space create base
-cub unit create web --space base --data nginx-v1.yaml
+cub space create traderx-base
+cub unit create trade-service --space traderx-base \
+  --data trade-service-v1.yaml
 
 for region in us eu asia; do
-  cub unit create web --space prod-$region \
-    --upstream-unit base/web  # Magic link!
+  cub unit create trade-service --space traderx-prod-$region \
+    --upstream-unit traderx-base/trade-service  # Magic link!
 done
 
-# Regions customize
-cub unit update web --space prod-eu --patch '{"replicas": 5}'
+# Regions already customized (from Stage 3)
+# EU has 5 replicas for peak trading
+# Asia has 2 for overnight
 
-# Update base to v2
-cub unit update web --space base --data nginx-v2.yaml
+# Critical update: New trade algorithm v2
+cub unit update trade-service --space traderx-base \
+  --data trade-service-v2.yaml  # New algorithm!
 
-# Push upgrade (preserves EU's 5 replicas!)
-cub unit update --upgrade --patch --space "prod-*"
+# Push upgrade (preserves regional replicas!)
+cub unit update --upgrade --patch --space "traderx-prod-*"
 ```
 
 ```
 Before upgrade:
-base/
-└── web (v1)
-    ├── prod-us/web (v1, replicas: default)
-    ├── prod-eu/web (v1, replicas: 5)
-    └── prod-asia/web (v1, replicas: default)
+traderx-base/
+└── trade-service (v1: old algorithm)
+    ├── prod-us/trade-service (v1, replicas: 3)
+    ├── prod-eu/trade-service (v1, replicas: 5)
+    └── prod-asia/trade-service (v1, replicas: 2)
 
 After upgrade:
-base/
-└── web (v2)
-    ├── prod-us/web (v2, replicas: default) ✓
-    ├── prod-eu/web (v2, replicas: 5) ✓     # Kept customization!
-    └── prod-asia/web (v2, replicas: default) ✓
+traderx-base/
+└── trade-service (v2: NEW algorithm)
+    ├── prod-us/trade-service (v2, replicas: 3) ✓
+    ├── prod-eu/trade-service (v2, replicas: 5) ✓  # Kept 5!
+    └── prod-asia/trade-service (v2, replicas: 2) ✓  # Kept 2!
 ```
 
-✅ **Essence**: Inheritance + merge. Nobody else can do this.
+✅ **Essence**: Algorithm updated everywhere. Regional scale preserved. Magic!
 
 ---
 
 ## Stage 5: Find and Fix Problems Everywhere
 
 ```bash
-# Find all high-replica services across ALL regions
+# Market closed in EU, scale down all high-replica services
 cub unit list --space "*" \
-  --where "Data CONTAINS 'replicas: 5'"
+  --where "Space.Slug LIKE '%prod-eu%' AND Data CONTAINS 'replicas: 5'"
 
 # Output:
-# prod-eu/web  (replicas: 5)
+# traderx-prod-eu/trade-service (replicas: 5)
 
-# Fix them all at once
-cub run set-replicas --replicas 3 \
+# Scale down after market close
+cub run set-replicas --replicas 2 \
   --where "Data CONTAINS 'replicas: 5'" \
-  --space "*"
+  --space "traderx-prod-eu"
+
+# Or find all services using old image version
+cub unit list --space "*" \
+  --where "Data CONTAINS 'image:' AND Data CONTAINS ':v1'"
 ```
 
-✅ **Essence**: SQL queries across everything. Bulk fixes.
+✅ **Essence**: SQL queries across regions. Fix problems globally.
 
 ---
 
 ## Stage 6: Atomic Multi-Service Updates
 
 ```bash
-# Must update API + DB together
-cub changeset create api-v2
-cub unit update api --space prod --patch '{"image": "api:v2"}'
-cub unit update db --space prod --patch '{"schema": "v2"}'
-cub changeset apply api-v2  # Both or neither!
+# New market data format requires updating BOTH services
+# They MUST deploy together or trading breaks!
+
+cub changeset create market-data-v2
+cub unit update reference-data --space traderx-prod-us \
+  --patch '{"image": "reference-data:v2"}'  # New format
+cub unit update trade-service --space traderx-prod-us \
+  --patch '{"image": "trade-service:v2"}'   # Compatible version
+cub changeset apply market-data-v2  # Both or neither!
 ```
 
 ```
-Changeset: api-v2
-├── api (v1 → v2)
-└── db (schema v1 → v2)
-Apply: ✓ Atomic!
+Changeset: market-data-v2
+├── reference-data (v1 → v2: new format)
+└── trade-service (v1 → v2: reads new format)
+Apply: ✓ Atomic! No broken trades!
 ```
 
-✅ **Essence**: Related changes succeed or fail together.
+✅ **Essence**: Related services update together. No partial failures.
 
 ---
 
@@ -189,28 +212,29 @@ Apply: ✓ Atomic!
 
 ```bash
 # Normal flow: dev → staging → us → eu → asia
-# But EU has critical bug!
+# But EU discovered critical trading bug at market open!
 
-# Fix directly in EU
-cub run fix-critical --space prod-eu
+# Emergency fix directly in EU
+cub run set-env-var --env-var CIRCUIT_BREAKER=true \
+  --unit trade-service --space traderx-prod-eu
 
-# Copy fix to Asia (skip US!)
-cub unit update web --space prod-asia \
-  --merge-unit prod-eu/web
+# Asia market opens in 2 hours, need fix NOW (skip US!)
+cub unit update trade-service --space traderx-prod-asia \
+  --merge-unit traderx-prod-eu/trade-service
 
-# Backfill US later
-cub unit update web --space prod-us \
-  --merge-unit prod-eu/web
+# US market closed, backfill later
+cub unit update trade-service --space traderx-prod-us \
+  --merge-unit traderx-prod-eu/trade-service
 ```
 
 ```
 Normal:   dev → staging → us → eu → asia
-Emergency:                 eu → asia
+Emergency:                 eu → asia  (Fix in 2 hours!)
                            ↓
-Backfill:                  us
+Backfill:                  us  (When market closed)
 ```
 
-✅ **Essence**: Skip the normal flow when needed.
+✅ **Essence**: Emergency fix when Asia can't wait for US testing.
 
 ---
 
@@ -218,24 +242,29 @@ Backfill:                  us
 
 ```
 Structure (setup-structure):
-base/                    # Shared configs
-├── web-base            # Base web config
-├── api-base            # Base API config
-└── db-base             # Base DB config
+traderx-base/                  # Shared configs
+├── reference-data-base       # Market data config
+├── trade-service-base        # Trading engine config
+└── web-gui-base             # UI config
 
-dev/                    # Development
-├── web (→base)         # Inherits + overrides
-├── api (→base)
-└── db (→base)
+traderx-dev/                  # Development
+├── reference-data (→base)
+├── trade-service (→base)
+└── web-gui (→base)
 
-prod-us/ (replicas: 3)  # US production
-prod-eu/ (replicas: 5)  # EU production (GDPR)
-prod-asia/ (replicas: 2) # Asia production (cost)
+traderx-prod-us/              # US production
+├── trade-service (replicas: 3)  # NYSE volume
+
+traderx-prod-eu/              # EU production
+├── trade-service (replicas: 5)  # Peak trading
+
+traderx-prod-asia/            # Asia production
+├── trade-service (replicas: 2)  # Overnight
 
 Operations (deploy):
-cub worker install      # One per cluster
-cub unit apply         # Deploy everything
-cub unit update --upgrade --patch  # Propagate changes
+cub worker install           # One per cluster
+cub unit apply              # Deploy everything
+cub unit update --upgrade --patch  # Push algorithm updates
 ```
 
 ---
@@ -256,26 +285,29 @@ cub unit update --upgrade --patch  # Propagate changes
 
 ---
 
-## The Two Scripts (Complete)
+## The Two Scripts (Complete TraderX)
 
 ### setup-structure
 ```bash
 #!/bin/bash
-# Create base
-cub space create base
-cub unit create web --space base --data web.yaml
-cub unit create api --space base --data api.yaml
+# Create base space for shared configs
+cub space create traderx-base
+cub unit create reference-data --space traderx-base --data reference-data.yaml
+cub unit create trade-service --space traderx-base --data trade-service.yaml
 
 # Create regions with inheritance
 for region in us eu asia; do
-  cub space create prod-$region
-  cub unit create web --space prod-$region --upstream-unit base/web
-  cub unit create api --space prod-$region --upstream-unit base/api
+  cub space create traderx-prod-$region
+  cub unit create reference-data --space traderx-prod-$region \
+    --upstream-unit traderx-base/reference-data
+  cub unit create trade-service --space traderx-prod-$region \
+    --upstream-unit traderx-base/trade-service
 done
 
-# Regional customizations
-cub unit update web --space prod-eu --patch '{"replicas": 5}'
-cub unit update web --space prod-asia --patch '{"replicas": 2}'
+# Regional customizations based on trading volume
+cub unit update trade-service --space traderx-prod-us --patch '{"replicas": 3}'   # NYSE
+cub unit update trade-service --space traderx-prod-eu --patch '{"replicas": 5}'   # Peak
+cub unit update trade-service --space traderx-prod-asia --patch '{"replicas": 2}' # Overnight
 ```
 
 ### deploy
@@ -283,11 +315,12 @@ cub unit update web --space prod-asia --patch '{"replicas": 2}'
 #!/bin/bash
 # Install workers (once per cluster)
 for region in us eu asia; do
-  cub worker install worker-$region --space prod-$region --wait
+  cub worker install traderx-worker-$region \
+    --space traderx-prod-$region --wait
 done
 
 # Deploy everything
-cub unit apply --space "prod-*" --where "*"
+cub unit apply --space "traderx-prod-*" --where "*"
 ```
 
 ---
