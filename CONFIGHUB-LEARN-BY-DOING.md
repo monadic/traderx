@@ -2,6 +2,8 @@
 
 A hands-on journey from simple deployment to advanced ConfigHub mastery.
 
+> **🚀 Want the 10-minute version?** Start with [CONFIGHUB-ESSENCE.md](CONFIGHUB-ESSENCE.md) - the absolute core of ConfigHub in 7 simple stages.
+
 ---
 
 ## Part 1: The 10 Killer Features (Simplified)
