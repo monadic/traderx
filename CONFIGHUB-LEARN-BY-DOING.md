@@ -8,35 +8,35 @@ A hands-on journey from simple deployment to advanced ConfigHub mastery.
 
 ### What Makes ConfigHub Unique
 
-1. **Push Changes Everywhere, Keep Customizations**
-   Update base configs → Changes flow to all environments while preserving local tweaks
+1. **ConfigHub IS the Source of Truth (Not Git)**
+   Direct operations with no pipeline latency - solves the "waiting for GitOps" problem
 
-2. **SQL-like Queries Across Everything**
-   `WHERE "Labels.critical = true"` finds resources across all environments instantly
+2. **Push Changes While Keeping Customizations**
+   Update base → flows everywhere preserving local overrides (nobody else can do this)
 
-3. **Atomic Multi-Service Updates**
-   Changesets ensure 10 services update together or not at all
+3. **See Desired vs Actual State Together**
+   LiveState tracking shows drift instantly across all environments
 
-4. **Skip the Normal Flow**
-   Promote straight from staging to prod-asia when prod-us isn't ready
+4. **Atomic Multi-Service Updates**
+   Changesets ensure related changes succeed or fail together
 
-5. **Built-in Approvals**
-   Changes require approval before applying (not bolted-on, native)
+5. **SQL Queries Across Everything**
+   `WHERE "Labels.critical = true"` searches ALL spaces/configs at once
 
-6. **Time Travel for Configs**
-   See what changed Tuesday at 3pm, diff it, rollback instantly
+6. **Workers Deploy to Kubernetes (No kubectl)**
+   ConfigHub manages the deployment agents - you never touch kubectl
 
-7. **Operations as Functions**
-   `cub run set-replicas --replicas 5` works on any Kubernetes resource
+7. **Emergency Bypass Routes**
+   Lateral promotion skips the normal dev→staging→prod flow when needed
 
-8. **Group Anything**
-   Sets let you group units logically and operate on them together
+8. **Component-Level Time Travel**
+   Rollback individual services to specific revisions, not whole releases
 
-9. **Policy as Code**
-   Triggers enforce rules on every change (e.g., "replicas must be < 10")
+9. **Policy Enforcement at Config Time**
+   Triggers with CEL validate changes before they deploy (shift left)
 
-10. **Discovery Without Hardcoding**
-    Apps find each other dynamically via queries, not configuration
+10. **Reusable Filters as Saved Queries**
+    Define complex WHERE clauses once, use everywhere as filters
 
 ---
 
@@ -55,6 +55,13 @@ Starting from zero, you'll deploy TraderX (a trading platform) while learning Co
 ```bash
 # Create a space (like a namespace for configs)
 cub space create traderx-dev
+
+# Install a Worker (ConfigHub's deployment agent)
+# This is CRITICAL - Worker manages Kubernetes for you
+cub worker install traderx-worker \
+  --space traderx-dev \
+  --namespace default \
+  --wait
 
 # Create a unit (one piece of configuration)
 cat > reference-data.yaml << 'EOF'
@@ -81,11 +88,15 @@ EOF
 
 cub unit create reference-data --space traderx-dev reference-data.yaml
 
-# Apply it (deploy to Kubernetes)
+# Associate unit with the Worker's target
+TARGET=$(cub target list --space traderx-dev --json | jq -r '.[0].TargetID')
+cub unit set-target "$TARGET" --space traderx-dev --unit reference-data
+
+# Apply it (Worker deploys to Kubernetes - no kubectl!)
 cub unit apply reference-data --space traderx-dev
 ```
 
-✅ **You learned**: Spaces hold units, units hold configs, apply deploys them.
+✅ **You learned**: ConfigHub Workers deploy to Kubernetes. You never use kubectl. ConfigHub is the source of truth.
 
 ---
 
@@ -139,7 +150,35 @@ cub unit apply --where "SetID = 'traderx-core'" --space traderx-dev
 
 ---
 
-## Stage 4: Search Across Everything (5 min)
+## Stage 4: See Desired vs Actual State (5 min)
+
+**Goal**: Understand LiveState - ConfigHub tracks both configs AND deployments.
+
+```bash
+# View desired configuration (Data) and actual state (LiveState)
+cub unit list --space traderx-dev --columns Slug,Data,LiveState
+
+# LiveState shows what's ACTUALLY running in Kubernetes
+# Data shows what you WANT to be running
+
+# Make a manual change in Kubernetes (bad practice but for demo)
+kubectl scale deployment reference-data --replicas=5
+
+# ConfigHub immediately sees the drift!
+cub unit get reference-data --space traderx-dev --json | \
+  jq '.Data.spec.replicas, .LiveState.spec.replicas'
+# Output: 1 (desired), 5 (actual) - DRIFT DETECTED!
+
+# Fix drift by re-applying from ConfigHub (source of truth)
+cub unit apply reference-data --space traderx-dev
+# Now back to 1 replica as configured
+```
+
+✅ **You learned**: ConfigHub tracks both desired (Data) and actual (LiveState). It's the source of truth.
+
+---
+
+## Stage 5: Search Across Everything (5 min)
 
 **Goal**: Find resources using SQL-like queries.
 
@@ -165,7 +204,7 @@ cub unit list --space "*" \
 
 ---
 
-## Stage 5: Atomic Changes with Changesets (10 min)
+## Stage 6: Atomic Changes with Changesets (10 min)
 
 **Goal**: Update database and API together atomically.
 
@@ -197,7 +236,7 @@ cub changeset apply api-v2-upgrade
 
 ---
 
-## Stage 6: Time Travel and Rollback (5 min)
+## Stage 7: Time Travel and Rollback (5 min)
 
 **Goal**: See history, rollback bad changes.
 
@@ -219,7 +258,7 @@ cub changeset rollback api-v2-upgrade
 
 ---
 
-## Stage 7: Inheritance for Shared Configs (10 min)
+## Stage 8: Inheritance for Shared Configs (10 min)
 
 **Goal**: Share common configuration with local overrides.
 
@@ -261,7 +300,7 @@ cub unit update --upgrade --patch --space "*"
 
 ---
 
-## Stage 8: Approvals and Compliance (10 min)
+## Stage 9: Approvals and Compliance (10 min)
 
 **Goal**: Require approval before production changes.
 
@@ -293,7 +332,7 @@ cub trigger create replica-limit \
 
 ---
 
-## Stage 9: Cross-App Integration (15 min)
+## Stage 10: Cross-App Integration (15 min)
 
 **Goal**: Add cost optimization that discovers TraderX automatically.
 
@@ -341,7 +380,7 @@ cub link create cost-tracking \
 
 ---
 
-## Stage 10: Advanced - Lateral Promotion (5 min)
+## Bonus Stage: Advanced - Lateral Promotion (5 min)
 
 **Goal**: Emergency fix to prod-asia, bypassing normal flow.
 
@@ -394,16 +433,17 @@ cost-optimizer/       # Separate app
 ```
 
 ### Capabilities Learned
-1. **Basic deployment** (units, spaces, apply)
+1. **Workers manage Kubernetes** (ConfigHub is source of truth, no kubectl)
 2. **Multi-environment** (copy between spaces)
-3. **Bulk operations** (WHERE clauses)
-4. **Discovery** (search across everything)
-5. **Atomic updates** (changesets)
-6. **Time travel** (revisions, rollback)
-7. **Inheritance** (base + overrides)
-8. **Compliance** (approvals, policies)
-9. **Loose coupling** (dynamic discovery)
-10. **Advanced flows** (lateral promotion)
+3. **Bulk operations** (Sets and WHERE clauses)
+4. **LiveState tracking** (see desired vs actual)
+5. **Discovery** (SQL queries across everything)
+6. **Atomic updates** (changesets)
+7. **Time travel** (revisions, rollback)
+8. **Inheritance** (base + overrides)
+9. **Compliance** (approvals, policies)
+10. **Loose coupling** (dynamic discovery)
+Plus: **Lateral promotion** (emergency bypass flows)
 
 ---
 
