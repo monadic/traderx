@@ -232,58 +232,81 @@ cub unit apply --filter myapp/critical --space "*"
 
 ---
 
-## 🎯 9. Unique Space Prefixes
+## ⚡ 9. Triggers for Policy Enforcement
 
 ### The Power
-Automatically generate unique, memorable prefixes to avoid naming collisions.
+Automated policy validation and enforcement using triggers that run on mutations and clones.
 
-### Real Example (Confirmed)
+### Real Examples (Confirmed)
 ```bash
-# Generate unique prefix for new project
-prefix=$(cub space new-prefix)
-echo $prefix  # e.g., "chubby-paws"
+# Require approval before any changes can be applied
+cub trigger create require-approval Mutation Kubernetes/YAML \
+  vet-approvedby 1  # Requires 1 approval
 
-# Use for all project resources
-cub space create ${prefix}-base
-cub space create ${prefix}-dev
-cub space create ${prefix}-prod
+# Enforce resource limits policy
+cub trigger create resource-limits Mutation Kubernetes/YAML \
+  vet-celexpr 'r.kind != "Deployment" || r.spec.replicas < 20'
 
-# Never worry about name collisions!
+# Prevent placeholder leaks to production
+cub trigger create no-placeholders Mutation Kubernetes/YAML \
+  vet-placeholders  # Blocks resources with {{ placeholders }}
+
+# Ensure compliance annotations
+cub trigger create compliance-check Mutation Kubernetes/YAML \
+  ensure-context true  # Forces context annotations
+
+# Bulk create triggers across environments
+cub trigger create --where "Event = 'Mutation'" \
+  --name-prefix prod- --dest-space prod-*
 ```
 
 ### Why It's Hard Without ConfigHub
-- Manual naming leads to collisions
-- No built-in prefix generation
-- Teams step on each other
+- Need separate admission controllers
+- Complex OPA policies
+- No unified enforcement across environments
+- Can't enforce on config changes (only on deployment)
 
-**Source:** Confirmed in `space_new_prefix.go`
+**Source:** Confirmed in `trigger_create.go`, supports CEL expressions and approval gates
 
 ---
 
-## 📊 10. LiveState Tracking
+## ✅ 10. Approval Workflows
 
 ### The Power
-ConfigHub tracks both desired configuration (Data) and actual deployed state (LiveState) in one place.
+Built-in approval mechanism for changes before they can be applied, with revision-specific approvals.
 
-### Real Example (Confirmed)
+### Real Examples (Confirmed)
 ```bash
-# View both desired and actual state
-cub unit list --space prod --columns Name,Data,LiveState
+# Approve a specific unit
+cub unit approve my-service
 
-# LiveState shows actual Kubernetes state (read-only)
-# Data shows desired ConfigHub configuration
-# Compare them programmatically for drift detection
+# Approve a specific revision
+cub unit approve my-service --revision 45
+
+# Approve the currently live revision
+cub unit approve my-service --revision LiveRevisionNum
+
+# Approve a tagged version
+cub unit approve my-service --revision Tag:release-v1.0
+
+# Bulk approve matching units
+cub unit approve --where "Labels.tier = 'backend'" --space "*"
+
+# Approve all units in a changeset
+cub unit approve --where "ChangeSetID = 'api-v2-migration'"
+
+# Combine with triggers to enforce approvals
+cub trigger create require-approval Mutation Kubernetes/YAML \
+  vet-approvedby 1  # Won't apply without approval
 ```
 
-### ⚠️ **Note: Built-in Drift Detection NOT YET AVAILABLE**
-While ConfigHub stores both states, there's no built-in DriftStatus field or automatic drift detection. You need to write code (like our drift-detector app) to compare Data vs LiveState.
-
 ### Why It's Hard Without ConfigHub
-- Need separate tools for desired vs actual
-- No unified storage
-- Complex state reconciliation
+- Need separate approval systems (ServiceNow, etc.)
+- No native integration with config changes
+- Can't track approval state per revision
+- Manual approval tracking
 
-**Source:** Confirmed - LiveState exists but is read-only, no built-in drift detection
+**Source:** Confirmed in `unit_approve.go` with revision-specific approval support
 
 ---
 
@@ -293,7 +316,8 @@ While ConfigHub stores both states, there's no built-in DriftStatus field or aut
 1. **Push-upgrade with customization preservation** - Nobody else does this
 2. **Changesets** - Atomic multi-unit operations
 3. **Lateral promotion** - Bypass hierarchy when needed
-4. **Space prefixes** - Automatic unique naming
+4. **Approval workflows** - Built-in revision-specific approvals
+5. **Policy triggers** - CEL-based validation and enforcement
 
 ### Very Hard to Replicate:
 1. **WHERE clause filtering** - SQL-like queries across configs
@@ -301,7 +325,12 @@ While ConfigHub stores both states, there's no built-in DriftStatus field or aut
 3. **ConfigHub Functions** - Standardized operations
 4. **Multi-space governance** - Team-based inheritance
 5. **Sets for grouping** - Logical unit collections
-6. **LiveState tracking** - Unified desired + actual state
+
+### Built-in Compliance & Audit:
+- **Mutation tracking** - Complete audit trail of all changes (`cub mutation list`)
+- **Invocations** - Reusable policy definitions
+- **Triggers** - Automated enforcement on every change
+- **Approvals** - Revision-specific approval tracking
 
 ### The Killer Combo:
 It's not just individual features - it's how they work together. The combination of inheritance, bulk operations, atomic changes, and revision history in one unified API is ConfigHub's competitive moat.
