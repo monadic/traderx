@@ -1,12 +1,25 @@
 # Simplified ConfigHub Pattern
 
-The global-app pattern is overly complex. Here's a simpler approach that's easier to understand and use.
+A simpler ConfigHub pattern for single-region deployments and small teams. This is an alternative to global-app, not a replacement.
 
 ---
 
-## 🚨 The Problem with Global-App
+## 📌 Important Context
 
-The current pattern has too many confusing elements:
+After reviewing the global-app documentation and understanding its design goals (issue #2880), I now understand that **global-app's complexity is justified for enterprise scenarios** like:
+- Multi-region deployments (US, EU, Asia)
+- Multi-team governance (app teams vs platform teams)
+- Lateral promotion strategies
+- Merging upstream updates with local customizations
+- Atomic changesets across multiple units
+
+**This simplified pattern is for the OTHER 80% of use cases** - single-region apps, small teams, and projects like TraderX.
+
+---
+
+## 🚨 When Global-App is Too Complex
+
+For simple deployments, the global-app pattern has unnecessary complexity:
 
 ```
 Project: chubby-paws
