@@ -1,295 +1,289 @@
 # ConfigHub's Killer Features
 
-These are the powerful capabilities that are genuinely hard (or impossible) to replicate without ConfigHub.
+These are the powerful capabilities that are genuinely hard (or impossible) to replicate without ConfigHub. All features listed here are CONFIRMED to exist in the ConfigHub source code.
 
 ---
 
 ## 🚀 1. Push-Upgrade Through Inheritance Chains
 
 ### The Power
-Change once, propagate everywhere intelligently while preserving local customizations.
+Change once at the base, propagate everywhere through UpstreamUnitID relationships while preserving local customizations.
 
-### Example
+### Real Example (Confirmed)
 ```bash
-# You have 50 microservices across 10 environments (500 units)
-# Security team mandates new TLS settings
+# You have 50 microservices inheriting from a base config
+# Security team updates TLS settings in base
 
-# Without ConfigHub: Edit 500 files, hope you don't miss any
-# With ConfigHub:
-cub unit update tls-base --data new-tls-config.yaml
-cub unit update --patch --upgrade --space "*"  # All 500 updated, customizations preserved!
+# Update the base unit
+cub unit update tls-base --space base --data new-tls-config.yaml
+
+# Push changes to all downstream units (preserves customizations!)
+cub unit update --patch --upgrade --space "*"
 ```
 
 ### Why It's Hard Without ConfigHub
 - Helm: Can't preserve local overrides during upgrades
 - Kustomize: No propagation mechanism
 - GitOps: Would need 500 PRs
-- Scripts: You'd reinvent ConfigHub poorly
+- Scripts: Complex custom merge logic needed
 
-**Verdict: Nearly impossible to replicate** 🔥
+**Source:** Confirmed in `unit_push_upgrade.go` and global-app example
 
 ---
 
-## 🎯 2. Bulk Operations with SQL-like Filters
+## 🎯 2. Bulk Operations with WHERE Clauses
 
 ### The Power
-Operate on arbitrary sets of configurations across environments with surgical precision.
+Target arbitrary sets of units across all spaces using SQL-like filters.
 
-### Example
+### Real Example (Confirmed)
 ```bash
-# "Update memory for all Java services in production regions during business hours"
-cub run set-memory --memory 4Gi \
-  --where "Labels.runtime = 'java' AND
-           Labels.env = 'prod' AND
-           Labels.business_hours = 'true'" \
-  --space "*"
+# Create a filter to target specific units
+cub filter create java-prod Unit \
+  --where-field "Labels.runtime = 'java' AND Labels.env = 'prod'"
 
-# This might touch 30 services across 5 regions instantly
+# Bulk update memory for all matching units
+cub run set-memory --memory 4Gi --filter myproject/java-prod --space "*"
+
+# Or use WHERE directly in some commands
+cub unit list --where "Labels.team = 'platform'" --space "*"
 ```
 
 ### Why It's Hard Without ConfigHub
-- Kubectl: Can only filter by labels on running resources, not configs
-- Helm: Would need custom scripts to find and update charts
+- Kubectl: Can only filter running resources, not configs
+- Helm: Would need custom scripts per chart
 - Terraform: No cross-workspace queries
-- GitOps: Grep through repos and hope
+- GitOps: Manual grep and edit
 
-**Verdict: Extremely difficult to replicate** 🔥
+**Source:** Confirmed in `internal/models/filter.go` with WhereData field
 
 ---
 
 ## 🔄 3. Lateral Promotion (Bypass Hierarchy)
 
 ### The Power
-Promote changes directly between environments, skipping the normal flow when needed.
+Promote changes directly between environments, skipping the normal promotion flow.
 
-### Example
+### Real Example (Confirmed)
 ```bash
-# Normal flow: dev → staging → prod-us → prod-eu → prod-asia
-# But EU has an urgent fix that can't wait for US testing
+# Normal flow: dev → staging → prod-us → prod-eu
+# But EU needs urgent fix from US without waiting for staging
 
-# Fix directly in prod-eu
-cub run fix-critical-bug --space prod-eu
-
-# Promote laterally to prod-asia (skip prod-us)
-cub unit update service --space prod-asia \
-  --merge-unit prod-eu/service \
+# Promote directly from prod-us to prod-eu (skip staging)
+cub unit update service --space prod-eu \
+  --merge-unit prod-us/service \
   --merge-base=10 --merge-end=11
-
-# Later backfill to maintain hierarchy
 ```
 
 ### Why It's Hard Without ConfigHub
-- GitOps: Forced to follow branch strategy
-- Helm: No concept of lateral relationships
-- Kustomize: Would break overlay structure
+- GitOps: Locked to branch strategy
+- Helm: No lateral relationships
+- Kustomize: Would break overlay hierarchy
 
-**Verdict: Unique to ConfigHub** 🔥
+**Source:** Confirmed in global-app lateral promotion example
 
 ---
 
 ## 🔒 4. Changesets for Atomic Operations
 
 ### The Power
-Lock multiple units together for coordinated changes, preventing partial updates.
+Group multiple units for atomic changes - all succeed or all fail together.
 
-### Example
+### Real Example (Confirmed)
 ```bash
-# Need to update API and database schema together
+# Create changeset for coordinated update
 cub changeset create api-v2-migration
 
-# Lock 20 related units
-cub unit update --patch \
-  --changeset api-v2-migration \
-  --where "Labels.service IN ('api', 'database', 'cache')"
+# Associate units with changeset
+cub changeset associate-unit api-v2-migration api-service database-schema cache-config
 
-# Now all changes are atomic - no one can update one without the others
-cub run migrate-schema --changeset api-v2-migration ...
-cub run update-api --changeset api-v2-migration ...
+# Make changes (locked together)
+cub run update-schema --changeset api-v2-migration
+cub run update-api --changeset api-v2-migration
 
 # Apply atomically
 cub changeset apply api-v2-migration  # All or nothing!
 ```
 
 ### Why It's Hard Without ConfigHub
-- No other tool has this concept
-- Would need complex locking mechanisms
+- No other tool has changesets
+- Would need distributed locking
 - GitOps: Can't guarantee atomic deployment
 
-**Verdict: Impossible without ConfigHub** 🔥
+**Source:** Confirmed in ConfigHub API and global-app examples
 
 ---
 
-## 📊 5. Live State + Drift Detection Built-in
+## ⏰ 5. Unit-Level Revision History
 
 ### The Power
-ConfigHub tracks both desired AND actual state, making drift detection native.
+Every unit change is versioned with full history, diff, and rollback capabilities.
 
-### Example
+### Real Example (Confirmed)
 ```bash
-# See drift across entire fleet instantly
-cub unit list --space "*" --columns Name,Space,LiveState,DriftStatus
+# List revisions for a unit
+cub revision list api-service --space prod
 
-# Shows:
-# api-service  prod-us     Running   DRIFTED (replicas: 3→5)
-# api-service  prod-eu     Running   OK
-# api-service  prod-asia   Failed    DRIFTED (image: v1.2→v1.1)
-
-# Fix drift with one command
-cub unit apply --where "DriftStatus != 'OK'" --space "*"
-```
-
-### Why It's Hard Without ConfigHub
-- Need separate tools (Kubectl + diff scripts)
-- No unified view across environments
-- Can't track config drift vs runtime drift
-
-**Verdict: Very difficult to replicate** 🔥
-
----
-
-## ⏰ 6. Revision History with Time Travel
-
-### The Power
-Every change is versioned, diffable, and reversible at the unit level.
-
-### Example
-```bash
-# "What changed in production last Tuesday at 3pm that broke things?"
-cub revision list api-service --space prod --after "2024-01-16T15:00"
-
-# See exactly what changed
+# See what changed between revisions
 cub unit diff api-service --space prod --from=45 --to=46
 
-# Instant rollback
+# Rollback to specific revision
 cub unit apply api-service --space prod --revision=45
 
-# Or rollback everything from that changeset
-cub changeset rollback tuesday-disaster
+# Rollback entire changeset
+cub changeset rollback api-v2-migration
 ```
 
 ### Why It's Hard Without ConfigHub
 - Git: Has history but can't rollback deployed resources
-- Helm: Rollback is all-or-nothing per release
-- Flux/Argo: Rollback means new commit
+- Helm: Rollback is per-release, not per-component
+- Flux/Argo: Rollback requires new commit
 
-**Verdict: Difficult to match** 🔥
-
----
-
-## 🧬 7. Smart Merge (Like Git for Configs)
-
-### The Power
-Merge changes from multiple sources intelligently.
-
-### Example
-```bash
-# Platform team updates base monitoring
-# You've customized it for your app
-# Security adds new rules
-# How do you merge all three?
-
-cub unit update monitoring --space myapp \
-  --merge-unit platform/monitoring-base \
-  --merge-unit security/monitoring-rules \
-  --patch  # Keeps your customizations!
-
-# Three-way merge completed!
-```
-
-### Why It's Hard Without ConfigHub
-- Would need to build custom merge logic
-- YAML merge is notoriously tricky
-- Most tools overwrite instead of merge
-
-**Verdict: Nearly impossible** 🔥
+**Source:** Confirmed - revision operations exist in CLI
 
 ---
 
-## 🎹 8. ConfigHub Functions (cub run)
+## 🎹 6. ConfigHub Functions (cub run)
 
 ### The Power
 Pre-built, tested operations that work on any Kubernetes manifest structure.
 
-### Example
+### Real Examples (Confirmed from global-app)
 ```bash
-# These work on ANY deployment, regardless of structure
-cub run set-image-reference --version v2.0 --container-name app
-cub run set-resource-limits --memory 2Gi --cpu 1000m
-cub run add-env-var --name FEATURE_FLAG --value true
-cub run set-replicas --replicas 10
-cub run add-sidecar --container-spec sidecar.yaml
+# These 5 functions are CONFIRMED in global-app:
+cub run set-image-version --version 1.2.0 --space dev
+cub run set-env-var --env-var FEATURE_FLAG=true --space prod
+cub run set-resource --cpu 2000m --memory 4Gi --space staging
+cub run set-hostname --hostname api.example.com --space prod
+cub run set-yaml-path --path spec.replicas --value 5 --space dev
 
-# No need to write jq/yq/sed scripts for each operation!
+# Work across multiple units with filters
+cub run set-image-version --version 2.0 --filter myapp/backend --space "*"
 ```
 
 ### Why It's Hard Without ConfigHub
-- Every team writes their own bash/python scripts
-- Breaks when YAML structure changes
+- Every team writes fragile jq/yq scripts
+- Scripts break when YAML structure changes
 - No standardization across teams
 
-**Verdict: Time-consuming to replicate** 🔥
+**Source:** Confirmed in global-app `bin/test-functions`
 
 ---
 
-## 🌍 9. Multi-Space/Multi-Region Governance
+## 🏢 7. Multi-Space Governance with Teams
 
 ### The Power
-Different teams own different spaces with inheritance and controlled propagation.
+Different teams own different spaces with controlled inheritance and propagation.
 
-### Example
+### Real Example (Confirmed)
 ```bash
-# Platform team owns base
+# Platform team owns base configurations
 platform-base/
-  ├── monitoring (platform team controls)
-  ├── logging (platform team controls)
+  ├── monitoring-base
+  └── logging-base
 
-# Regional teams own their regions
-us-prod/ (US team controls)
-  ├── monitoring (inherited + customized)
-  ├── app-service (fully controlled)
+# App teams inherit but customize
+team-alpha-prod/ (Alpha team controls)
+  ├── monitoring (upstream: platform-base/monitoring-base)
+  └── app-service
 
-eu-prod/ (EU team controls)
-  ├── monitoring (inherited + customized)
-  ├── app-service (GDPR compliant version)
+team-beta-prod/ (Beta team controls)
+  ├── monitoring (upstream: platform-base/monitoring-base)
+  └── app-service
 
-# Platform pushes security update
-cub unit update monitoring --space platform-base --security-patch
-# Regional teams pull when ready
-cub unit update monitoring --space us-prod --upgrade --patch
+# Platform updates base, teams pull when ready
+cub unit update monitoring-base --space platform-base --data security-fix.yaml
+cub unit update monitoring --space team-alpha-prod --upgrade --patch
 ```
 
 ### Why It's Hard Without ConfigHub
-- GitOps: Complex repo/branch permissions
+- GitOps: Complex repo permissions
 - Helm: No inheritance model
 - Terraform: Workspace isolation
 
-**Verdict: Very complex to build** 🔥
+**Source:** Confirmed - spaces and upstream relationships are core features
 
 ---
 
-## 🔄 10. State Machine for Deployments
+## 📦 8. Sets for Logical Grouping
 
 ### The Power
-ConfigHub tracks deployment states and gates.
+Group related units across spaces for coordinated operations.
 
-### Example
+### Real Example (Confirmed)
 ```bash
-# Set up deployment gates
-cub gate create business-hours --schedule "Mon-Fri 9:00-17:00"
-cub gate create approval --require-approval "platform-team"
+# Create a set for critical services
+cub set create critical-services
 
-cub unit update api --gate business-hours,approval
+# Add units to the set
+cub set add-unit critical-services payment-api auth-service database
 
-# Deployment waits for conditions
-cub unit apply api  # Queued until Monday 9am AND platform approves
+# Operate on the entire set
+cub filter create critical Unit --where-field "SetID = 'critical-services'"
+cub unit apply --filter myapp/critical --space "*"
 ```
 
 ### Why It's Hard Without ConfigHub
-- Would need separate approval system
-- No built-in scheduling for configs
-- Complex state management
+- Would need external tagging system
+- No native grouping in other tools
+- Manual tracking of relationships
 
-**Verdict: Requires multiple tools** 🔥
+**Source:** Confirmed in `internal/models/set.go`
+
+---
+
+## 🎯 9. Unique Space Prefixes
+
+### The Power
+Automatically generate unique, memorable prefixes to avoid naming collisions.
+
+### Real Example (Confirmed)
+```bash
+# Generate unique prefix for new project
+prefix=$(cub space new-prefix)
+echo $prefix  # e.g., "chubby-paws"
+
+# Use for all project resources
+cub space create ${prefix}-base
+cub space create ${prefix}-dev
+cub space create ${prefix}-prod
+
+# Never worry about name collisions!
+```
+
+### Why It's Hard Without ConfigHub
+- Manual naming leads to collisions
+- No built-in prefix generation
+- Teams step on each other
+
+**Source:** Confirmed in `space_new_prefix.go`
+
+---
+
+## 📊 10. LiveState Tracking
+
+### The Power
+ConfigHub tracks both desired configuration (Data) and actual deployed state (LiveState) in one place.
+
+### Real Example (Confirmed)
+```bash
+# View both desired and actual state
+cub unit list --space prod --columns Name,Data,LiveState
+
+# LiveState shows actual Kubernetes state (read-only)
+# Data shows desired ConfigHub configuration
+# Compare them programmatically for drift detection
+```
+
+### ⚠️ **Note: Built-in Drift Detection NOT YET AVAILABLE**
+While ConfigHub stores both states, there's no built-in DriftStatus field or automatic drift detection. You need to write code (like our drift-detector app) to compare Data vs LiveState.
+
+### Why It's Hard Without ConfigHub
+- Need separate tools for desired vs actual
+- No unified storage
+- Complex state reconciliation
+
+**Source:** Confirmed - LiveState exists but is read-only, no built-in drift detection
 
 ---
 
@@ -298,33 +292,35 @@ cub unit apply api  # Queued until Monday 9am AND platform approves
 ### Truly Unique to ConfigHub:
 1. **Push-upgrade with customization preservation** - Nobody else does this
 2. **Changesets** - Atomic multi-unit operations
-3. **Lateral promotion** - Bypass normal flow when needed
-4. **Smart merge** - Three-way config merges
-5. **Cross-space WHERE queries** - SQL for configs
+3. **Lateral promotion** - Bypass hierarchy when needed
+4. **Space prefixes** - Automatic unique naming
 
 ### Very Hard to Replicate:
-1. **Built-in drift detection** - Would need separate tooling
-2. **Revision time travel** - Complex to build
-3. **ConfigHub Functions** - Years of development
-4. **Multi-team governance** - Complex permission models
-5. **Deployment gates** - Multiple tools needed
+1. **WHERE clause filtering** - SQL-like queries across configs
+2. **Unit revision history** - Per-component versioning
+3. **ConfigHub Functions** - Standardized operations
+4. **Multi-space governance** - Team-based inheritance
+5. **Sets for grouping** - Logical unit collections
+6. **LiveState tracking** - Unified desired + actual state
 
 ### The Killer Combo:
-It's not just one feature - it's how they work together. You could build some of these individually, but having them integrated in one system with a unified API is ConfigHub's moat.
+It's not just individual features - it's how they work together. The combination of inheritance, bulk operations, atomic changes, and revision history in one unified API is ConfigHub's competitive moat.
 
 ---
 
-## 🤔 What This Means for You
+## 🚀 What This Means for You
 
-### If you need these features:
-- Multi-region with local customizations → ConfigHub is essential
-- Complex team governance → ConfigHub saves months of work
-- Bulk operations across environments → ConfigHub is unmatched
-- Atomic multi-service updates → Only ConfigHub does this
+### Use ConfigHub When You Have:
+- Multi-region deployments with local customizations
+- Multiple teams needing controlled autonomy
+- Complex promotion requirements (lateral, conditional)
+- Need for atomic multi-service updates
+- Bulk operations across many environments
 
-### If you don't need these features:
-- Simple single-region app → ConfigHub is convenient but not essential
-- Single team → Many features unused
-- No customizations → Simpler tools might suffice
+### ConfigHub Might Be Overkill For:
+- Simple single-region apps
+- Single team, single namespace
+- No customization requirements
+- Static configurations
 
-**The value of ConfigHub scales with complexity.** The more complex your setup, the more these features become lifesavers rather than nice-to-haves.
+**The value of ConfigHub scales with complexity.** The more complex your deployment topology, the more these features become essential rather than nice-to-have.
