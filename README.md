@@ -226,20 +226,103 @@ See [DevOps as Apps docs]([docs/DEPLOYMENT-PATTERNS.md](https://github.com/monad
 
 ## 🧪 Testing
 
-### Unit Tests
+TraderX includes comprehensive test coverage with different infrastructure requirements.
+
+### Test Types
+
+**Unit Tests** (No infrastructure required - < 30 seconds):
+- Script syntax validation
+- YAML manifest validation
+- Code quality checks
+- ConfigHub-only command enforcement
+
+**Integration Tests** (Infrastructure required - 2-5 minutes):
+- ConfigHub API operations
+- Worker apply operations
+- Service connectivity
+- Full deployment validation
+
+**End-to-End Tests** (Full deployment required - 5-10 minutes):
+- Complete user workflows
+- Multi-environment promotion
+- Rollback scenarios
+
+### Option 1: Quick Validation (No Infrastructure)
+
+Run unit tests only - validates code quality without requiring ConfigHub or Kubernetes:
+
 ```bash
-# Test deployment scripts
-./test/test-deployment.sh
+# Quick unit tests
+./test/run-all-tests.sh --quick
+
+# Result: 70/70 tests in < 30 seconds
+# - All scripts syntactically valid
+# - YAML manifests valid
+# - Best practices enforced
+# - ConfigHub-only commands verified
 ```
 
-### Integration Tests
+### Option 2: Full Testing (Infrastructure Required)
+
+Set up infrastructure first, then run complete test suite:
+
 ```bash
-# Deploy to Kind cluster and verify
+# 1. Authenticate with ConfigHub
+cub auth login
+
+# 2. Create ConfigHub structure
+bin/install-base      # Creates spaces, units, filters
+bin/install-envs      # Creates dev/staging/prod hierarchy
+
+# 3. Set up Kubernetes (if not already available)
 kind create cluster --name traderx-test
-bin/install-base
-bin/apply-all dev
-./test/verify-deployment.sh
+kubectl cluster-info
+
+# 4. Install ConfigHub worker
+bin/setup-worker dev
+
+# 5. Deploy application
+bin/ordered-apply dev
+
+# 6. Run full test suite
+./test/run-all-tests.sh
+
+# Result: All tests including integration and E2E
+# - Unit tests: 70/70
+# - Integration tests: Full deployment validation
+# - E2E tests: Complete workflows
 ```
+
+### Test Suites
+
+```bash
+# Unit tests only
+./test/unit/test-scripts.sh
+
+# ConfigHub API tests
+./test/unit/confighub-api/test-api.sh
+
+# Integration tests (requires infrastructure)
+./test/integration/test-deployment.sh dev
+
+# End-to-end workflow tests
+./test/e2e/test-full-workflow.sh
+
+# All tests
+./test/run-all-tests.sh
+```
+
+### CI/CD Testing
+
+```bash
+# CI mode (non-interactive)
+./test/run-all-tests.sh --ci
+
+# With coverage report
+./test/run-all-tests.sh --coverage
+```
+
+For detailed testing documentation, see [test/README.md](test/README.md).
 
 ## 📈 Monitoring
 
