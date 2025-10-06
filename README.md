@@ -252,22 +252,29 @@ bin/combined-view trade-service
 
 ## 📚 ConfigHub Patterns Used
 
-This deployment demonstrates all 12 canonical ConfigHub patterns:
+This deployment demonstrates core ConfigHub patterns:
+
+### Actively Used ✅
 
 1. **Unique Project Naming** - `cub space new-prefix` generates unique names
 2. **Space Hierarchy** - base → dev → staging → prod
-3. **Filter Creation** - Backend vs frontend service filters
-4. **Environment Cloning** - `--upstream-unit` relationships
-5. **Version Promotion** - `cub run set-image-reference`
-6. **Sets for Grouping** - Core services, trading services, UI
+3. **Filter Creation** - Layer-based filters (backend, frontend, data)
+4. **Filter-Based Deployment** - Deploy by layer using `--where` clauses
+5. **Bulk Operations** - Update multiple units via filters
+6. **Label-Based Organization** - Layer, order, tech, service labels
 7. **Event-Driven** - Workers respond to ConfigHub changes
-8. **ConfigHub Functions** - `cub run` commands for operations
-9. **Changesets** - Atomic multi-service updates
-10. **Lateral Promotion** - Region-by-region rollout
-11. **Revision Management** - Full history and rollback
-12. **Link Management** - Connect services to infrastructure
+8. **Two-State Management** - Explicit update + apply workflow
 
-See [DevOps as Apps docs]([docs/DEPLOYMENT-PATTERNS.md](https://github.com/monadic/devops-as-apps-project/tree/main)) for details.
+### Available But Not Demonstrated
+
+9. **Sets for Grouping** - Not used (cub set command not available in current CLI)
+10. **Version Promotion** - `cub run set-image-reference` (pattern exists, not used)
+11. **Changesets** - Atomic multi-service updates (pattern exists, not used)
+12. **Lateral Promotion** - Region-by-region rollout (pattern exists, not used)
+13. **Revision Management** - Full history and rollback (available via ConfigHub)
+14. **Link Management** - Connect services to infrastructure (available via ConfigHub)
+
+See [docs/ADVANCED-CONFIGHUB-PATTERNS.md](docs/ADVANCED-CONFIGHUB-PATTERNS.md) for implementation details.
 
 ## 🧪 Testing
 
@@ -391,28 +398,6 @@ kubectl logs -n traderx-dev -l app=trade-service --follow
 # View worker logs
 kubectl logs -n traderx-dev -l app=confighub-worker --follow
 ```
-
-## 🛠️ Recent Fixes (2025-10-03)
-
-The following critical issues were identified and fixed:
-
-1. **Missing Worker-Target Association**: ConfigHub requires Worker → Target → Unit chain
-   - Fix: Created `bin/quick-fix` script that properly installs worker and associates units
-
-2. **Docker Image URLs Wrong**: Images were pointing to Docker Hub instead of GitHub Container Registry
-   - Fix: Changed all images from `finos/traderx-*` to `ghcr.io/finos/traderx/*`
-
-3. **Template Variables Not Supported**: ConfigHub doesn't process Go templates ({{ .Variable }})
-   - Fix: Replaced all template variables with actual values
-
-4. **Health Probes Incorrect**: Used Spring Boot actuator paths for NestJS services
-   - Fix: Changed to `/health` endpoint on correct ports
-
-5. **Bash Compatibility**: Scripts used bash 4.0+ features not available in macOS bash 3.2
-   - Fix: Removed associative arrays, fixed array operations
-
-6. **Missing Service Account**: Pods couldn't start without traderx-service-account
-   - Fix: Created service-account.yaml and deployed it first
 
 ## 🔧 Troubleshooting
 
