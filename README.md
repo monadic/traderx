@@ -92,6 +92,16 @@ See **[WORKING-STATUS.md](WORKING-STATUS.md)** for detailed analysis.
 - Docker daemon **running**
 - `cub auth login` completed
 
+### Pre-Flight Check
+
+Before deploying, verify your ConfigHub + Kubernetes environment:
+
+```bash
+./test-confighub-k8s
+```
+
+This runs the [ConfigHub + Kubernetes Mini TCK](https://github.com/monadic/devops-sdk/blob/main/TCK.md) to verify your setup is working correctly. Expected output: `🎉 SUCCESS! ConfigHub + Kubernetes integration verified`
+
 ### Option 1: Simple Sequential Deployment
 
 ```bash
