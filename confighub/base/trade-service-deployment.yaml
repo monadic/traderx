@@ -55,7 +55,7 @@ spec:
         - name: ACCOUNT_SERVICE_PORT
           value: "18088"
         - name: DATABASE_TCP_HOST
-          value: "database"
+          value: "confighubplaceholder"
         - name: DATABASE_PORT
           value: "18082"
         - name: PEOPLE_SERVICE_HOST

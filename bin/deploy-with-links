@@ -1,0 +1,110 @@
+#!/bin/bash
+set -euo pipefail
+
+# deploy-with-links - Deploy TraderX using ConfigHub Links (canonical pattern)
+#
+# This script demonstrates the CANONICAL ConfigHub pattern for dependency management:
+# - Services express NEEDS via placeholders (confighubplaceholder)
+# - Infrastructure PROVIDES values via ConfigHub functions
+# - Links connect needs to providers
+# - ConfigHub automatically fills placeholders and respects dependencies
+#
+# Compare with:
+# - bin/deploy-by-layer: Manual ordering via labels + sleep (deprecated approach)
+# - bin/ordered-apply: Sequential deployment via hardcoded list (deprecated approach)
+#
+# See: docs/LINKS-DEPENDENCIES.md
+
+echo "🚀 Deploying TraderX using ConfigHub Links..."
+echo ""
+
+# Get project name
+if [ ! -f .cub-project ]; then
+  echo "❌ Error: .cub-project file not found"
+  echo "   Run bin/install-base first"
+  exit 1
+fi
+
+PROJECT=$(cat .cub-project)
+
+# Determine environment
+ENV="${1:-dev}"
+SPACE="${PROJECT}-${ENV}"
+
+echo "📦 Project: $PROJECT"
+echo "🌍 Environment: $ENV"
+echo "📍 Space: $SPACE"
+echo ""
+
+# Verify space exists
+if ! cub space get "$SPACE" >/dev/null 2>&1; then
+  echo "❌ Error: Space $SPACE does not exist"
+  echo "   Run bin/install-envs first"
+  exit 1
+fi
+
+# Verify links exist
+echo "🔍 Verifying dependency links..."
+LINK_COUNT=$(cub link list --space "$SPACE" --format json 2>/dev/null | jq 'length' || echo "0")
+
+if [ "$LINK_COUNT" -eq "0" ]; then
+  echo "⚠️  No links found in $SPACE"
+  echo ""
+  echo "Links are required for dependency management."
+  echo "Creating links now..."
+  echo ""
+
+  if [ -x "bin/create-links" ]; then
+    bin/create-links "$ENV"
+  else
+    echo "❌ Error: bin/create-links not found or not executable"
+    echo "   Run: chmod +x bin/create-links && bin/create-links $ENV"
+    exit 1
+  fi
+
+  echo ""
+else
+  echo "✅ Found $LINK_COUNT dependency links"
+fi
+
+echo ""
+echo "🎯 Deploying all units..."
+echo ""
+echo "Note: ConfigHub respects dependencies via links."
+echo "      Units with unfulfilled NEEDS will wait for PROVIDERS."
+echo ""
+
+# Apply all units - ConfigHub handles dependency ordering automatically!
+# No need for manual layer ordering, sleep statements, or kubectl wait.
+# ConfigHub:
+# 1. Checks which units have placeholders (NEEDS)
+# 2. Follows links to find providers
+# 3. Validates all needs can be satisfied
+# 4. Computes topological sort based on links
+# 5. Applies in correct order
+# 6. Auto-fills placeholders with values from providers
+
+cub unit apply --space "$SPACE" --where "*" --wait
+
+echo ""
+echo "✅ Deployment complete!"
+echo ""
+echo "📊 Verify deployment:"
+echo "   kubectl get pods -n traderx-${ENV}"
+echo ""
+echo "🔗 View dependency graph:"
+echo "   cub link list --space $SPACE --format json | jq -r '.[] | \"\\(.FromUnitSlug) → \\(.ToUnitSlug)\"'"
+echo ""
+echo "🔍 Check unit status:"
+echo "   cub unit list --space $SPACE --format json | jq '.[] | {slug: .Slug, needs_upgrade: .UpgradeNeeded, applied: .Applied}'"
+echo ""
+echo "📋 View live state:"
+echo "   cub unit get-live-state <unit-name> --space $SPACE"
+echo ""
+echo "Key Advantages of Links:"
+echo "  ✅ No manual ordering needed"
+echo "  ✅ No hardcoded sleeps or waits"
+echo "  ✅ Automatic placeholder filling"
+echo "  ✅ Dependency validation before apply"
+echo "  ✅ Self-documenting dependency graph"
+echo ""

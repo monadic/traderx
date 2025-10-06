@@ -22,15 +22,15 @@ spec:
         - containerPort: 18090
         env:
         - name: DATABASE_TCP_HOST
-          value: "database"
+          value: "confighubplaceholder"
         - name: POSITION_SERVICE_PORT
           value: "18090"
         - name: SPRING_DATASOURCE_URL
-          value: "jdbc:h2:tcp://database:18082/mem:traderx;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS PUBLIC"
+          value: "jdbc:h2:tcp://confighubplaceholder:999999999/mem:traderx;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS PUBLIC"
         - name: SPRING_DATASOURCE_USERNAME
-          value: "sa"
+          value: "confighubplaceholder"
         - name: SPRING_DATASOURCE_PASSWORD
-          value: "sa"
+          value: "confighubplaceholder"
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
           value: "update"
         - name: SPRING_JPA_DATABASE_PLATFORM

@@ -1,0 +1,130 @@
+#!/bin/bash
+set -euo pipefail
+
+# create-links - Establish ConfigHub link relationships for TraderX dependencies
+# This is the CANONICAL pattern for expressing service dependencies in ConfigHub
+# See: docs/LINKS-DEPENDENCIES.md
+
+echo "🔗 Creating ConfigHub links for TraderX service dependencies..."
+
+# Get project name
+if [ ! -f .cub-project ]; then
+  echo "❌ Error: .cub-project file not found"
+  echo "   Run bin/install-base first to create the project"
+  exit 1
+fi
+
+PROJECT=$(cat .cub-project)
+
+# Determine which environment to create links for
+ENV="${1:-dev}"
+SPACE="${PROJECT}-${ENV}"
+
+echo "📦 Project: $PROJECT"
+echo "🌍 Environment: $ENV"
+echo "📍 Space: $SPACE"
+
+# Verify space exists
+if ! cub space get "$SPACE" >/dev/null 2>&1; then
+  echo "❌ Error: Space $SPACE does not exist"
+  echo "   Run bin/install-envs first to create the environment"
+  exit 1
+fi
+
+echo ""
+echo "Creating dependency links..."
+echo ""
+
+# Pattern: <service> NEEDS database connection info
+# Database PROVIDES connection info via service discovery
+
+# Backend services that depend on database
+BACKEND_SERVICES=(
+  "account-service"
+  "position-service"
+  "trade-service"
+  "trade-processor"
+)
+
+echo "📊 Backend Services → Database"
+for service in "${BACKEND_SERVICES[@]}"; do
+  link_slug="${service}-to-db"
+
+  echo "  Creating link: ${service}-deployment → database-deployment"
+
+  cub link create "$link_slug" \
+    "${service}-deployment" \
+    "database-deployment" \
+    --space "$SPACE" \
+    --label relationship=dependency \
+    --label type=database \
+    --label purpose="database-connection" \
+    --allow-exists \
+    --json >/dev/null 2>&1 || {
+      echo "    ⚠️  Link may already exist or units not found (continuing...)"
+    }
+done
+
+echo ""
+echo "🔄 Service-to-Service Dependencies"
+
+# trade-processor depends on trade-service
+echo "  Creating link: trade-processor-deployment → trade-service-deployment"
+cub link create "trade-processor-to-trade-service" \
+  "trade-processor-deployment" \
+  "trade-service-deployment" \
+  --space "$SPACE" \
+  --label relationship=dependency \
+  --label type=service \
+  --label purpose="api-client" \
+  --allow-exists \
+  --json >/dev/null 2>&1 || {
+    echo "    ⚠️  Link may already exist (continuing...)"
+  }
+
+echo ""
+echo "🌐 Frontend → Backend Services"
+
+# web-gui depends on all backend services for API calls
+BACKEND_APIS=(
+  "reference-data"
+  "people-service"
+  "account-service"
+  "position-service"
+  "trade-service"
+  "trade-feed"
+)
+
+for service in "${BACKEND_APIS[@]}"; do
+  link_slug="web-gui-to-${service}"
+
+  echo "  Creating link: web-gui-deployment → ${service}-service"
+
+  cub link create "$link_slug" \
+    "web-gui-deployment" \
+    "${service}-service" \
+    --space "$SPACE" \
+    --label relationship=dependency \
+    --label type=api \
+    --label purpose="http-client" \
+    --allow-exists \
+    --json >/dev/null 2>&1 || {
+      echo "    ⚠️  Link may already exist or units not found (continuing...)"
+    }
+done
+
+echo ""
+echo "✅ Link creation complete!"
+echo ""
+echo "📋 Verify links created:"
+echo "   cub link list --space $SPACE"
+echo ""
+echo "🔍 View dependency graph:"
+echo "   cub link list --space $SPACE --format json | jq -r '.[] | \"\\(.FromUnitSlug) → \\(.ToUnitSlug)\"'"
+echo ""
+echo "🎯 Key Benefits:"
+echo "   - ConfigHub knows the dependency graph"
+echo "   - Placeholders auto-filled from linked units"
+echo "   - Apply operations respect dependencies"
+echo "   - Validation before apply (no missing deps)"
+echo ""

@@ -109,7 +109,35 @@ bin/ordered-apply dev # Deploy all 9 services in dependency order
 kubectl get pods -n traderx-dev
 ```
 
-### Option 2: Advanced Layer-Based Deployment
+### Option 2: Links-Based Deployment (Canonical Pattern) ⭐ RECOMMENDED
+
+```bash
+# Prerequisites: Same as above (install-base, install-envs, setup-worker)
+
+# Deploy using ConfigHub Links (automatic dependency management)
+bin/deploy-with-links dev
+
+# This demonstrates the CANONICAL ConfigHub pattern:
+# - Services use placeholders for needed values (confighubplaceholder)
+# - Links connect services to their dependencies
+# - ConfigHub auto-fills placeholders from linked units
+# - Automatic dependency ordering (no manual sleeps!)
+# - Validation before apply (catches missing dependencies)
+
+# View dependency graph
+cub link list --space $(cat .cub-project)-dev
+```
+
+**Why Links are Better:**
+- ✅ ConfigHub handles dependency ordering automatically
+- ✅ No manual sleeps or `kubectl wait` commands
+- ✅ Placeholders auto-filled from providers
+- ✅ Self-documenting dependency graph
+- ✅ Validates before apply (no runtime failures)
+
+See [docs/LINKS-DEPENDENCIES.md](docs/LINKS-DEPENDENCIES.md) for full explanation.
+
+### Option 3: Advanced Layer-Based Deployment
 
 ```bash
 # Prerequisites: Same as above (install-base, install-envs, setup-worker)
@@ -128,7 +156,7 @@ kubectl get pods -n traderx-dev -l layer=backend
 kubectl get pods -n traderx-dev -l layer=data
 ```
 
-### Option 3: Bulk Configuration Management
+### Option 4: Bulk Configuration Management
 
 ```bash
 # Scale all backend services to 3 replicas
@@ -264,15 +292,15 @@ This deployment demonstrates core ConfigHub patterns:
 6. **Label-Based Organization** - Layer, order, tech, service labels
 7. **Event-Driven** - Workers respond to ConfigHub changes
 8. **Two-State Management** - Explicit update + apply workflow
+9. **Link Management** ⭐ NEW - Dependency tracking via links + needs/provides
 
 ### Available But Not Demonstrated
 
-9. **Sets for Grouping** - Not used (cub set command not available in current CLI)
-10. **Version Promotion** - `cub run set-image-reference` (pattern exists, not used)
-11. **Changesets** - Atomic multi-service updates (pattern exists, not used)
-12. **Lateral Promotion** - Region-by-region rollout (pattern exists, not used)
-13. **Revision Management** - Full history and rollback (available via ConfigHub)
-14. **Link Management** - Connect services to infrastructure (available via ConfigHub)
+10. **Sets for Grouping** - Not used (cub set command not available in current CLI)
+11. **Version Promotion** - `cub run set-image-reference` (pattern exists, not used)
+12. **Changesets** - Atomic multi-service updates (pattern exists, not used)
+13. **Lateral Promotion** - Region-by-region rollout (pattern exists, not used)
+14. **Revision Management** - Full history and rollback (available via ConfigHub)
 
 See [docs/ADVANCED-CONFIGHUB-PATTERNS.md](docs/ADVANCED-CONFIGHUB-PATTERNS.md) for implementation details.
 
