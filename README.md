@@ -368,4 +368,4 @@ Apache 2.0 - See [LICENSE](LICENSE)
 
 ---
 
-**Built with ConfigHub** • **Part of DevOps as Apps Platform** • **Better than kubectl/Tilt**
+**Built with ConfigHub** • **Part of DevOps as Apps Platform**
