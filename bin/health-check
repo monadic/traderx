@@ -31,13 +31,36 @@ info() {
   log "INFO: $*"
 }
 
+# Usage message
+usage() {
+  cat << EOF
+Usage: $0 <environment>
+
+Performs comprehensive health checks on TraderX services
+
+Arguments:
+  environment    Target environment (dev, staging, prod)
+
+Examples:
+  $0 dev         Check health in dev environment
+  $0 staging     Check health in staging environment
+
+EOF
+  exit 1
+}
+
+# Check arguments
+if [ $# -eq 0 ]; then
+  usage
+fi
+
 PROJECT=$(bin/proj 2>/dev/null || echo "")
 if [ -z "$PROJECT" ]; then
   error "Project not found. Run bin/install-base first."
   exit 1
 fi
 
-ENV=${1:-dev}
+ENV=$1
 
 # Validate environment
 if [[ ! "$ENV" =~ ^(dev|staging|prod)$ ]]; then

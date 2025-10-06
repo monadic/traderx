@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # TraderX ConfigHub - Apply All Services to Environment
 

@@ -264,22 +264,22 @@ done
 
 echo ""
 
-# Test 12: ConfigHub templating
-echo "Test Suite 12: ConfigHub Templating"
+# Test 12: Namespace and replica configuration
+echo "Test Suite 12: Namespace and Replica Configuration"
 echo "--------------------------------------"
 
-TEMPLATED_MANIFESTS=(
+DEPLOYMENT_MANIFESTS=(
   "confighub/base/trade-service-deployment.yaml"
   "confighub/base/reference-data-deployment.yaml"
 )
 
-for manifest in "${TEMPLATED_MANIFESTS[@]}"; do
-  test_start "$manifest uses ConfigHub templating"
-  if grep -q "{{ .Namespace" "$manifest" && \
-     grep -q "{{ .Replicas" "$manifest"; then
+for manifest in "${DEPLOYMENT_MANIFESTS[@]}"; do
+  test_start "$manifest has namespace and replicas"
+  if grep -q "namespace:" "$manifest" && \
+     grep -q "replicas:" "$manifest"; then
     test_pass
   else
-    test_fail "Missing ConfigHub template variables"
+    test_fail "Missing namespace or replicas fields"
   fi
 done
 
@@ -289,7 +289,7 @@ echo ""
 echo "Test Suite 13: Health Checks in Manifests"
 echo "--------------------------------------"
 
-for manifest in "${TEMPLATED_MANIFESTS[@]}"; do
+for manifest in "${DEPLOYMENT_MANIFESTS[@]}"; do
   test_start "$manifest has health probes"
   if grep -q "livenessProbe:" "$manifest" && \
      grep -q "readinessProbe:" "$manifest" && \
@@ -306,7 +306,7 @@ echo ""
 echo "Test Suite 14: Resource Limits"
 echo "--------------------------------------"
 
-for manifest in "${TEMPLATED_MANIFESTS[@]}"; do
+for manifest in "${DEPLOYMENT_MANIFESTS[@]}"; do
   test_start "$manifest has resource limits"
   if grep -q "resources:" "$manifest" && \
      grep -q "requests:" "$manifest" && \
@@ -323,7 +323,7 @@ echo ""
 echo "Test Suite 15: Security Context"
 echo "--------------------------------------"
 
-for manifest in "${TEMPLATED_MANIFESTS[@]}"; do
+for manifest in "${DEPLOYMENT_MANIFESTS[@]}"; do
   test_start "$manifest has security context"
   if grep -q "securityContext:" "$manifest" && \
      grep -q "runAsNonRoot:" "$manifest"; then

@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # TraderX ConfigHub - Install ConfigHub Worker for Auto-Deploy
 # Pattern 7: Event-Driven Architecture with Workers

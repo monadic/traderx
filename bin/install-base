@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # TraderX ConfigHub Installation - Base Structure
 # Following canonical patterns from global-app
@@ -14,17 +14,17 @@ echo "📦 Using project prefix: $project"
 # Save project name for other scripts
 echo "$project" > .cub-project
 
-# Create base space
+# Create base space (idempotent)
 echo "Creating base space: ${project}-base"
 cub space create ${project}-base \
   --label project=$project \
-  --label environment=base
+  --label environment=base || echo "Space ${project}-base already exists"
 
-# Create filter space
+# Create filter space (idempotent)
 echo "Creating filter space: ${project}-filters"
 cub space create ${project}-filters \
   --label project=$project \
-  --label type=filters
+  --label type=filters || echo "Space ${project}-filters already exists"
 
 # Pattern 3: Filter Creation
 echo "Creating filters..."
