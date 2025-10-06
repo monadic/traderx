@@ -14,18 +14,17 @@ spec:
         app: trade-feed
         layer: backend
     spec:
+      enableServiceLinks: false
       containers:
       - name: trade-feed
         image: ghcr.io/finos/traderx/trade-feed:latest
         ports:
-        - containerPort: 18088
+        - containerPort: 18086
         env:
-        - name: SPRING_PROFILES_ACTIVE
-          value: "dev"
-        - name: SERVER_PORT
-          value: "18088"
-        - name: TRADE_SERVICE_URL
-          value: "http://trade-service:18092"
+        - name: PORT
+          value: "18086"
+        - name: TRADE_FEED_PORT
+          value: "18086"
         resources:
           requests:
             memory: "256Mi"

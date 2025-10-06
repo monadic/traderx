@@ -7,7 +7,7 @@ spec:
   selector:
     app: trade-feed
   ports:
-  - port: 18088
-    targetPort: 18088
+  - port: 18086
+    targetPort: 18086
     protocol: TCP
   type: ClusterIP

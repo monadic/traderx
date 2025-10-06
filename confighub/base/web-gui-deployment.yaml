@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: web-gui
-        image: ghcr.io/finos/traderx/web-gui:latest
+        image: ghcr.io/finos/traderx/web-front-end-angular:latest
         ports:
         - containerPort: 18080
         env:
@@ -38,8 +38,8 @@ spec:
           value: "http://trade-feed:18088"
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
+            memory: "1Gi"
             cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"

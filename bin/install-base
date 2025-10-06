@@ -61,22 +61,24 @@ cub filter create ordered Unit \
   --where-field "Labels.order IN ('0','1','2','3','4','5','6','7','8','9')"
 
 # Create Sets for grouping
-echo "Creating sets..."
+# NOTE: 'cub set' command not available in current CLI version
+# Sets functionality may be available via API or future CLI updates
+echo "⚠️  Skipping sets (not available in current cub CLI version)"
 
-cub set create critical-services \
-  --space ${project}-base \
-  --label tier=critical \
-  --label monitor=true
+# cub set create critical-services \
+#   --space ${project}-base \
+#   --label tier=critical \
+#   --label monitor=true
 
-cub set create data-services \
-  --space ${project}-base \
-  --label tier=data \
-  --label layer=data
+# cub set create data-services \
+#   --space ${project}-base \
+#   --label tier=data \
+#   --label layer=data
 
 # Create units for each service
 echo "Creating ConfigHub units..."
 
-# Infrastructure units first
+# Infrastructure units first (namespace MUST be order=0, database order=0)
 echo "  Creating namespace unit..."
 cub unit create --space ${project}-base \
   --label type=infra \
@@ -84,15 +86,34 @@ cub unit create --space ${project}-base \
   namespace \
   confighub/base/namespace.yaml
 
-# Service units (in dependency order)
+# Infrastructure units first
+echo "  Creating database units..."
+if [ -f "confighub/base/database-deployment.yaml" ]; then
+  cub unit create --space ${project}-base \
+    --label service=database \
+    --label layer=data \
+    --label order=0 \
+    database-deployment \
+    confighub/base/database-deployment.yaml
+fi
+
+if [ -f "confighub/base/database-service.yaml" ]; then
+  cub unit create --space ${project}-base \
+    --label service=database \
+    --label layer=data \
+    database-service \
+    confighub/base/database-service.yaml
+fi
+
+# Service units (in dependency order - CORRECTED PORTS per FINOS TraderX)
 services=(
   "reference-data:1:data:Java/Spring:18085"
-  "people-service:2:backend:Java/Spring:18089"
-  "account-service:3:backend:Node.js:18091"
-  "position-service:4:backend:Java/Spring:18090"
-  "trade-service:5:backend:.NET:18092"
-  "trade-processor:6:backend:Python:0"
-  "trade-feed:7:backend:Java/Spring:18088"
+  "trade-feed:2:backend:Java/Spring:18086"
+  "account-service:3:backend:Node.js:18088"
+  "people-service:4:backend:Java/Spring:18089"
+  "position-service:5:backend:Java/Spring:18090"
+  "trade-processor:6:backend:Python:18091"
+  "trade-service:7:backend:.NET:18092"
   "web-gui:8:frontend:Angular:18080"
 )
 

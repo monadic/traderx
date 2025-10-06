@@ -14,20 +14,27 @@ spec:
         app: account-service
         layer: backend
     spec:
+      enableServiceLinks: false
       containers:
       - name: account-service
         image: ghcr.io/finos/traderx/account-service:latest
         ports:
-        - containerPort: 18091
+        - containerPort: 18088
         env:
-        - name: NODE_ENV
-          value: "development"
-        - name: PORT
-          value: "18091"
-        - name: REFERENCE_DATA_URL
-          value: "http://reference-data:18085"
-        - name: PEOPLE_SERVICE_URL
-          value: "http://people-service:18089"
+        - name: ACCOUNT_SERVICE_PORT
+          value: "18088"
+        - name: DATABASE_TCP_HOST
+          value: "database"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:h2:tcp://database:18082/mem:traderx;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS PUBLIC"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "sa"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "sa"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.H2Dialect"
         resources:
           requests:
             memory: "256Mi"

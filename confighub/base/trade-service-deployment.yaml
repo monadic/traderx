@@ -35,6 +35,7 @@ spec:
         prometheus.io/port: "18092"
         prometheus.io/path: "/metrics"
     spec:
+      enableServiceLinks: false
       serviceAccountName: traderx-service-account
       securityContext:
         runAsNonRoot: true
@@ -49,18 +50,28 @@ spec:
           containerPort: 18092
           protocol: TCP
         env:
-        - name: ASPNETCORE_ENVIRONMENT
-          value: Development
-        - name: ASPNETCORE_URLS
-          value: "http://+:18092"
-        - name: REFERENCE_DATA_URL
-          value: "http://reference-data:18085"
-        - name: ACCOUNT_SERVICE_URL
-          value: "http://account-service:18091"
-        - name: POSITION_SERVICE_URL
-          value: "http://position-service:18090"
-        - name: PEOPLE_SERVICE_URL
-          value: "http://people-service:18089"
+        - name: ACCOUNT_SERVICE_HOST
+          value: "account-service"
+        - name: ACCOUNT_SERVICE_PORT
+          value: "18088"
+        - name: DATABASE_TCP_HOST
+          value: "database"
+        - name: DATABASE_PORT
+          value: "18082"
+        - name: PEOPLE_SERVICE_HOST
+          value: "people-service"
+        - name: PEOPLE_SERVICE_PORT
+          value: "18089"
+        - name: REFERENCE_DATA_HOST
+          value: "reference-data"
+        - name: REFERENCE_DATA_PORT
+          value: "18085"
+        - name: TRADE_FEED_HOST
+          value: "trade-feed"
+        - name: TRADE_FEED_PORT
+          value: "18086"
+        - name: TRADE_SERVICE_PORT
+          value: "18092"
         # Circuit breaker configuration
         - name: CIRCUIT_BREAKER_ENABLED
           value: "true"
@@ -74,35 +85,21 @@ spec:
         - name: CONNECTION_TIMEOUT
           value: "30"
         livenessProbe:
-          httpGet:
-            path: /health/live
+          tcpSocket:
             port: 18092
-            scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
           successThreshold: 1
           failureThreshold: 3
         readinessProbe:
-          httpGet:
-            path: /health/ready
+          tcpSocket:
             port: 18092
-            scheme: HTTP
           initialDelaySeconds: 10
           periodSeconds: 5
           timeoutSeconds: 3
           successThreshold: 1
           failureThreshold: 2
-        startupProbe:
-          httpGet:
-            path: /health/startup
-            port: 18092
-            scheme: HTTP
-          initialDelaySeconds: 0
-          periodSeconds: 5
-          timeoutSeconds: 3
-          successThreshold: 1
-          failureThreshold: 12
         resources:
           requests:
             memory: 512Mi

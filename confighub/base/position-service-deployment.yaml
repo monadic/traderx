@@ -14,20 +14,27 @@ spec:
         app: position-service
         layer: backend
     spec:
+      enableServiceLinks: false
       containers:
       - name: position-service
         image: ghcr.io/finos/traderx/position-service:latest
         ports:
         - containerPort: 18090
         env:
-        - name: SPRING_PROFILES_ACTIVE
-          value: "dev"
-        - name: SERVER_PORT
+        - name: DATABASE_TCP_HOST
+          value: "database"
+        - name: POSITION_SERVICE_PORT
           value: "18090"
-        - name: REFERENCE_DATA_URL
-          value: "http://reference-data:18085"
-        - name: ACCOUNT_SERVICE_URL
-          value: "http://account-service:18091"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:h2:tcp://database:18082/mem:traderx;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS PUBLIC"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "sa"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "sa"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.H2Dialect"
         resources:
           requests:
             memory: "256Mi"

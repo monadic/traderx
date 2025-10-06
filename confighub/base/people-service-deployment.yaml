@@ -14,18 +14,12 @@ spec:
         app: people-service
         layer: backend
     spec:
+      enableServiceLinks: false
       containers:
       - name: people-service
         image: ghcr.io/finos/traderx/people-service:latest
         ports:
         - containerPort: 18089
-        env:
-        - name: SPRING_PROFILES_ACTIVE
-          value: "dev"
-        - name: SERVER_PORT
-          value: "18089"
-        - name: REFERENCE_DATA_URL
-          value: "http://reference-data:18085"
         resources:
           requests:
             memory: "256Mi"

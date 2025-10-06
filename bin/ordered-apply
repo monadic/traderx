@@ -58,16 +58,17 @@ SPACE="${PROJECT}-${ENV}"
 info "Starting ordered deployment to $SPACE..."
 info "Log file: $LOG_FILE"
 
-# Define deployment order based on dependencies
+# Define deployment order based on dependencies (per FINOS TraderX README)
 # Using simple array since bash 3.2 doesn't support associative arrays
 deployment_order=(
+  "database"
   "reference-data"
+  "trade-feed"
   "people-service"
   "account-service"
   "position-service"
-  "trade-service"
   "trade-processor"
-  "trade-feed"
+  "trade-service"
   "web-gui"
 )
 
@@ -193,17 +194,36 @@ apply_service() {
 
   # Dependencies are handled by the ordered list
 
-  info "Applying $service..."
+  info "Deploying $service..."
 
-  # Apply deployment with retry
+  # CRITICAL: Update ConfigHub desired state first, then apply to Kubernetes
+  # ConfigHub does NOT auto-deploy updates - must explicitly apply
+  # See docs/AUTOUPDATES-AND-GITOPS.md for explanation
+
+  # Update deployment in ConfigHub (desired state)
+  if [ -f "confighub/base/${service}-deployment.yaml" ]; then
+    info "  Updating ${service}-deployment in ConfigHub..."
+    if ! retry_with_backoff $MAX_RETRIES "cub unit update ${service}-deployment --space $SPACE confighub/base/${service}-deployment.yaml"; then
+      warn "Failed to update ${service}-deployment in ConfigHub, attempting apply anyway..."
+    fi
+  fi
+
+  # Apply deployment to Kubernetes (live state)
+  info "  Applying ${service}-deployment to Kubernetes..."
   if ! retry_with_backoff $MAX_RETRIES "cub unit apply ${service}-deployment --space $SPACE"; then
     error "Failed to apply ${service}-deployment"
     failed_services="$failed_services $service"
     return 1
   fi
 
-  # Apply service if it exists
+  # Update and apply service if it exists
   if cub unit get ${service}-service --space $SPACE &>/dev/null; then
+    if [ -f "confighub/base/${service}-service.yaml" ]; then
+      info "  Updating ${service}-service in ConfigHub..."
+      retry_with_backoff $MAX_RETRIES "cub unit update ${service}-service --space $SPACE confighub/base/${service}-service.yaml" || true
+    fi
+
+    info "  Applying ${service}-service to Kubernetes..."
     if ! retry_with_backoff $MAX_RETRIES "cub unit apply ${service}-service --space $SPACE"; then
       warn "Failed to apply ${service}-service, but continuing..."
     fi

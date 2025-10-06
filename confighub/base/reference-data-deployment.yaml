@@ -35,6 +35,7 @@ spec:
         prometheus.io/port: "18085"
         prometheus.io/path: "/actuator/prometheus"
     spec:
+      enableServiceLinks: false
       serviceAccountName: traderx-service-account
       securityContext:
         runAsNonRoot: true
@@ -52,12 +53,8 @@ spec:
           containerPort: 8081
           protocol: TCP
         env:
-        - name: SPRING_PROFILES_ACTIVE
-          value: dev
-        - name: SERVER_PORT
+        - name: REFERENCE_DATA_SERVICE_PORT
           value: "18085"
-        - name: MANAGEMENT_SERVER_PORT
-          value: "8081"
         - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
           value: "health,info,metrics,prometheus"
         # JVM tuning

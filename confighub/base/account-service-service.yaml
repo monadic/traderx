@@ -7,7 +7,7 @@ spec:
   selector:
     app: account-service
   ports:
-  - port: 18091
-    targetPort: 18091
+  - port: 18088
+    targetPort: 18088
     protocol: TCP
   type: ClusterIP

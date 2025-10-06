@@ -1,0 +1,150 @@
+#!/bin/bash
+set -euo pipefail
+
+# deploy-by-layer - Deploy TraderX using ConfigHub filters and labels
+#
+# This script demonstrates advanced ConfigHub patterns:
+# - Filters for layer-based deployment
+# - Label-based targeting with WHERE clauses
+# - Bulk operations across multiple units
+# - Dependency-aware deployment order
+#
+# This is the PRODUCTION pattern for TraderX (full 9-service deployment).
+# For tutorial/learning, see microtraderx which uses simpler patterns.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Source common functions
+source "$SCRIPT_DIR/../test/lib/common.sh"
+
+# Configuration
+ENV=${1:-dev}
+PROJECT=$(bin/proj)
+SPACE="${PROJECT}-${ENV}"
+
+info "Deploying TraderX to $ENV using ConfigHub layer-based deployment"
+
+# Verify space exists
+if ! cub space list | grep -q "$SPACE"; then
+  error "Space $SPACE does not exist. Run bin/install-base and bin/install-envs first."
+  exit 1
+fi
+
+# Verify worker is running
+info "Checking worker status..."
+WORKER_COUNT=$(cub worker list --space $SPACE | grep -c "$PROJECT-worker" || true)
+if [ "$WORKER_COUNT" -eq 0 ]; then
+  error "No worker found for space $SPACE. Run bin/setup-worker $ENV first."
+  exit 1
+fi
+
+success "Worker found and ready"
+
+#############################################
+# Layer 1: Infrastructure (order=0)
+#############################################
+info "Layer 1: Deploying infrastructure (service account)..."
+
+# Apply all units with order=0 (infrastructure)
+cub unit apply --space $SPACE --where "Labels.order = '0'" || {
+  error "Failed to apply infrastructure layer"
+  exit 1
+}
+
+# Wait for infrastructure to be ready
+sleep 3
+success "Infrastructure layer deployed"
+
+#############################################
+# Layer 2: Data (order=1)
+#############################################
+info "Layer 2: Deploying data layer (database, reference-data)..."
+
+# Apply all units with layer=data using filter
+cub unit apply --space $SPACE --where "Labels.layer = 'data'" || {
+  error "Failed to apply data layer"
+  exit 1
+}
+
+# Wait for database to be ready
+info "Waiting for database to be ready..."
+kubectl wait --for=condition=ready pod -l app=database -n traderx-$ENV --timeout=120s || {
+  warn "Database pod not ready yet, continuing..."
+}
+
+success "Data layer deployed"
+
+#############################################
+# Layer 3: Backend Services (order=2-7)
+#############################################
+info "Layer 3: Deploying backend services..."
+
+# Apply all backend services at once using filter
+cub unit apply --space $SPACE --where "Labels.layer = 'backend'" || {
+  error "Failed to apply backend layer"
+  exit 1
+}
+
+# Wait for backend services to start
+info "Waiting for backend services to initialize..."
+sleep 10
+
+# Check which backend services are running
+info "Backend service status:"
+kubectl get pods -n traderx-$ENV -l layer=backend
+
+success "Backend layer deployed"
+
+#############################################
+# Layer 4: Frontend (order=8)
+#############################################
+info "Layer 4: Deploying frontend..."
+
+# Apply frontend layer (web-gui)
+cub unit apply --space $SPACE --where "Labels.layer = 'frontend'" || {
+  warn "Frontend deployment failed (may be expected if image doesn't exist)"
+}
+
+success "Frontend layer deployment attempted"
+
+#############################################
+# Verification
+#############################################
+info "Verifying deployment..."
+
+# Count running pods
+TOTAL_PODS=$(kubectl get pods -n traderx-$ENV --no-headers | wc -l | tr -d ' ')
+RUNNING_PODS=$(kubectl get pods -n traderx-$ENV --no-headers | grep Running | wc -l | tr -d ' ')
+
+info "Pod Status: $RUNNING_PODS/$TOTAL_PODS running"
+
+# Show summary by layer
+echo ""
+info "Services by layer:"
+echo "  Infrastructure:"
+kubectl get pods -n traderx-$ENV -l order=0 --no-headers 2>/dev/null || echo "    None"
+echo "  Data Layer:"
+kubectl get pods -n traderx-$ENV -l layer=data --no-headers 2>/dev/null || echo "    None"
+echo "  Backend Services:"
+kubectl get pods -n traderx-$ENV -l layer=backend --no-headers 2>/dev/null || echo "    None"
+echo "  Frontend:"
+kubectl get pods -n traderx-$ENV -l layer=frontend --no-headers 2>/dev/null || echo "    None"
+
+# Show services
+echo ""
+info "Exposed services:"
+kubectl get svc -n traderx-$ENV
+
+success "Deployment complete!"
+echo ""
+info "Advanced ConfigHub patterns used:"
+echo "  ✓ Layer-based deployment with filters"
+echo "  ✓ WHERE clause targeting"
+echo "  ✓ Bulk apply operations"
+echo "  ✓ Label-based organization"
+echo ""
+info "Next steps:"
+echo "  - Test services: kubectl get pods -n traderx-$ENV"
+echo "  - Check logs: kubectl logs -n traderx-$ENV -l layer=backend"
+echo "  - Promote to staging: bin/promote $ENV staging"

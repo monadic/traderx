@@ -18,120 +18,85 @@ if [ -z "$ENV" ]; then
 fi
 
 SPACE="${PROJECT}-${ENV}"
-echo "🚀 Installing ConfigHub worker in $SPACE..."
+WORKER_NAME="${PROJECT}-worker-${ENV}"
 
-# Create worker configuration unit
-echo "Creating worker configuration..."
-cat > /tmp/worker-config.yaml << EOF
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: confighub-worker-config
-  namespace: traderx-${ENV}
-data:
-  config.yaml: |
-    space: "${SPACE}"
-    target: "k8s-${ENV}"
-    interval: 10
-    filters:
-      - "${PROJECT}/all"
-    autoApply: true
-EOF
+echo "🚀 Installing ConfigHub worker for $SPACE..."
+echo ""
 
-cub unit create confighub-worker-config \
+# Check if kubectl is configured
+if ! kubectl cluster-info &>/dev/null; then
+  echo "❌ Error: kubectl is not configured or cluster is not accessible"
+  echo "Please create a Kind cluster first:"
+  echo "  kind create cluster --name traderx-test"
+  exit 1
+fi
+
+# Create confighub namespace in cluster
+echo "Creating confighub namespace in cluster..."
+kubectl create namespace confighub --dry-run=client -o yaml | kubectl apply -f - 2>&1 | grep -v "unchanged" || true
+echo ""
+
+# Check if worker already exists in ConfigHub
+if cub worker list --space $SPACE 2>/dev/null | grep -q $WORKER_NAME; then
+  echo "✅ Worker '$WORKER_NAME' already exists in ConfigHub"
+else
+  echo "Creating ConfigHub worker..."
+  cub worker create $WORKER_NAME --space $SPACE
+  echo ""
+fi
+
+# Export worker manifest and apply to Kubernetes
+echo "Installing worker to Kubernetes cluster..."
+cub worker install $WORKER_NAME \
+  --namespace confighub \
   --space $SPACE \
-  --type kubernetes/v1/ConfigMap \
-  --data-file /tmp/worker-config.yaml \
-  --label type=worker \
-  --label auto-deploy=true \
-  || echo "Worker config already exists"
+  --include-secret \
+  --export > /tmp/worker-manifest.yaml
 
-# Create worker deployment
-echo "Creating worker deployment..."
-cat > /tmp/worker-deployment.yaml << EOF
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: confighub-worker
-  namespace: traderx-${ENV}
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: confighub-worker
-  template:
-    metadata:
-      labels:
-        app: confighub-worker
-    spec:
-      containers:
-      - name: worker
-        image: confighub/worker:latest
-        env:
-        - name: CUB_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: confighub-token
-              key: token
-        - name: CUB_API_URL
-          value: "https://hub.confighub.com/api"
-        - name: CUB_SPACE
-          value: "${SPACE}"
-        - name: AUTO_APPLY
-          value: "true"
-        volumeMounts:
-        - name: config
-          mountPath: /etc/confighub
-      volumes:
-      - name: config
-        configMap:
-          name: confighub-worker-config
-EOF
+kubectl apply -f /tmp/worker-manifest.yaml 2>&1 | grep -E "(created|configured)" || true
+echo ""
 
-cub unit create confighub-worker-deployment \
-  --space $SPACE \
-  --type kubernetes/apps/v1/Deployment \
-  --data-file /tmp/worker-deployment.yaml \
-  --label type=worker \
-  --label auto-deploy=true \
-  || echo "Worker deployment already exists"
+# Wait for worker to connect
+echo "Waiting for worker to connect..."
+sleep 10
 
-# Create secret for ConfigHub token
-echo "Creating ConfigHub token secret..."
-cat > /tmp/worker-secret.yaml << EOF
-apiVersion: v1
-kind: Secret
-metadata:
-  name: confighub-token
-  namespace: traderx-${ENV}
-type: Opaque
-data:
-  token: $(cub auth get-token | base64)
-EOF
+# Check worker status
+if cub worker list --space $SPACE 2>/dev/null | grep -q "Ready"; then
+  echo "✅ Worker connected!"
+  echo ""
+  cub worker list --space $SPACE
+  echo ""
+else
+  echo "⚠️  Worker is connecting... Check status with:"
+  echo "  cub worker list --space $SPACE"
+  echo ""
+fi
 
-cub unit create confighub-worker-secret \
-  --space $SPACE \
-  --type kubernetes/v1/Secret \
-  --data-file /tmp/worker-secret.yaml \
-  --label type=worker \
-  --label sensitive=true \
-  || echo "Worker secret already exists"
+# Wait for target to be discovered by worker
+echo "Waiting for target to be discovered..."
+sleep 5
 
-# Apply worker units
-echo "Deploying worker..."
-cub unit apply confighub-worker-config --space $SPACE --target k8s-${ENV}
-cub unit apply confighub-worker-secret --space $SPACE --target k8s-${ENV}
-cub unit apply confighub-worker-deployment --space $SPACE --target k8s-${ENV}
+# Get the discovered target (format: k8s-<worker-name>)
+TARGET_SLUG="k8s-${WORKER_NAME}"
+
+echo "Setting targets on all units in $SPACE..."
+echo "Target: $TARGET_SLUG"
+echo ""
+
+# Set target on all units in the space
+cub unit set-target $TARGET_SLUG --where "Space.Slug = '$SPACE'" --space $SPACE
+echo ""
 
 echo "✅ ConfigHub worker installed!"
 echo ""
 echo "The worker will now:"
 echo "  • Monitor $SPACE for changes"
-echo "  • Auto-apply changes to k8s-${ENV}"
-echo "  • Check every 10 seconds"
+echo "  • Apply units to Kubernetes cluster 'traderx-test'"
+echo "  • Target: $TARGET_SLUG"
 echo ""
 echo "View worker logs:"
-echo "  kubectl logs -n traderx-${ENV} -l app=confighub-worker --follow"
+echo "  kubectl logs -n confighub -l confighub-worker=$WORKER_NAME --follow"
 echo ""
-echo "Test auto-deployment:"
-echo "  cub run set-image-reference --container-name web-gui --image-reference :v1.2.3 --space $SPACE"
+echo "Next steps:"
+echo "  bin/ordered-apply $ENV    # Deploy all services"
+echo ""
