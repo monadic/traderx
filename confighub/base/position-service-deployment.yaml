@@ -35,6 +35,23 @@ spec:
           value: "update"
         - name: SPRING_JPA_DATABASE_PLATFORM
           value: "org.hibernate.dialect.H2Dialect"
+        livenessProbe:
+          httpGet:
+            path: /health/alive
+            port: 18090
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 18090
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
         resources:
           requests:
             memory: "256Mi"
