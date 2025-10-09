@@ -37,7 +37,7 @@ spec:
           service:
             name: account-service
             port:
-              number: 18091
+              number: 18088
       - path: /api/positions
         pathType: Prefix
         backend:
@@ -58,4 +58,4 @@ spec:
           service:
             name: trade-feed
             port:
-              number: 18088
+              number: 18086

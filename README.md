@@ -38,50 +38,45 @@ This deployment demonstrates production-grade ConfigHub capabilities:
 
 ## 📦 Services
 
-TraderX includes 8 microservices:
+TraderX includes 9 microservices:
 
 | Service | Language | Port | Purpose |
 |---------|----------|------|---------|
+| database | Java/H2 | 18082 | In-memory database |
 | reference-data | Java/Spring | 18085 | Master data (securities, accounts) |
+| trade-feed | Java/Spring | 18086 | Real-time trade feed |
+| account-service | Java/Spring | 18088 | Account operations |
 | people-service | Java/Spring | 18089 | User/trader management |
-| account-service | Node.js/NestJS | 18091 | Account operations |
 | position-service | Java/Spring | 18090 | Position tracking |
 | trade-service | .NET/C# | 18092 | Trade execution |
 | trade-processor | Python | N/A | Trade settlement (async) |
-| trade-feed | Java/Spring | 18088 | Real-time trade feed |
-| web-gui | Angular/React | 18080 | User interface |
+| web-gui | Angular | 18093 | User interface |
 
 ## 📊 Current Status
 
-**✅ 6/9 Services Running (67%)** - Demonstrates all ConfigHub patterns
+**✅ 9/9 Services Running (100%)** - Full TraderX deployment with all ConfigHub patterns
 
 **Project Name**: `sweet-growl-traderx`
 **ConfigHub Spaces**: 5 (base, dev, staging, prod, filters)
 **Units Deployed**: 68 across all environments
 **Worker Status**: ✅ Running and connected
+**Dashboard**: ✅ Accessible and functional
 
-### ✅ Working Services (6/9)
+### ✅ All Services Running (9/9)
 
 | Service | Status | Purpose |
 |---------|--------|---------|
 | database | ✅ Running | H2 in-memory database |
 | reference-data | ✅ Running | Master data service |
 | people-service | ✅ Running | User management |
+| account-service | ✅ Running | Account operations |
+| position-service | ✅ Running | Position tracking |
 | trade-feed | ✅ Running | Real-time trade feed |
 | trade-service | ✅ Running | Trade execution |
 | trade-processor | ✅ Running | Settlement processing |
+| web-gui | ✅ Running | Dashboard interface |
 
-### ⚠️ Known Limitations (3/9)
-
-| Service | Issue | Cause |
-|---------|-------|-------|
-| account-service | Unstable | In-memory database limitations |
-| position-service | Unstable | In-memory database limitations |
-| web-gui | Memory pressure | Needs 2Gi+ memory |
-
-**Note**: The 3 unstable services are due to infrastructure limitations (in-memory database, local cluster resources), not ConfigHub issues. All ConfigHub patterns work correctly.
-
-See **[WORKING-STATUS.md](WORKING-STATUS.md)** for detailed analysis.
+**Note**: All services fully operational after fixes based on [chanwit/traderx](https://github.com/chanwit/traderx) working reference. See **[TRADERX-FIX-SUMMARY.md](TRADERX-FIX-SUMMARY.md)** for details.
 
 ## 🚀 Quick Start
 
@@ -188,6 +183,59 @@ bin/bulk-update status data dev
 bin/promote dev staging
 bin/apply-all staging
 bin/validate-deployment staging  # Validate staging
+```
+
+## 🌐 Accessing the TraderX Dashboard
+
+Once deployed, access the TraderX web interface:
+
+```bash
+# Port-forward the web-gui service
+kubectl port-forward -n traderx-dev deployment/web-gui 8080:18093
+
+# Open in browser
+open http://localhost:8080
+```
+
+The dashboard should now be accessible at **http://localhost:8080**
+
+### Making a Trade
+
+1. **View the dashboard** - You should see the TraderX trading interface
+2. **Navigate to trades section** - Look for trade creation/execution options
+3. **Create a trade** - Enter trade details (security, quantity, price, etc.)
+4. **Submit** - Execute the trade
+
+### Connected Services
+
+All 9 services are running and connected:
+
+| Service | Status | Function |
+|---------|--------|----------|
+| database | ✅ Running | H2 database storing trade data |
+| account-service | ✅ Running | Managing accounts |
+| people-service | ✅ Running | Managing users |
+| position-service | ✅ Running | Tracking positions |
+| reference-data | ✅ Running | Security reference data |
+| trade-service | ✅ Running | Processing trades |
+| trade-feed | ✅ Running | Real-time trade feed |
+| trade-processor | ✅ Running | Background processing |
+| web-gui | ✅ Running | Dashboard interface |
+
+### Checking Service Health
+
+```bash
+# View all pods
+kubectl get pods -n traderx-dev
+
+# View all services
+kubectl get svc -n traderx-dev
+
+# Check specific service logs
+kubectl logs -n traderx-dev deployment/trade-service --tail=50
+
+# Run health check script
+bin/health-check dev
 ```
 
 ## 📁 Repository Structure
