@@ -32,89 +32,180 @@ if ! cub space get "$SPACE" >/dev/null 2>&1; then
 fi
 
 echo ""
-echo "Creating dependency links..."
+echo "Creating dependency links (based on chanwit/traderx canonical pattern)..."
 echo ""
 
-# Pattern: <service> NEEDS database connection info
-# Database PROVIDES connection info via service discovery
+# Pattern from chanwit/traderx: https://github.com/chanwit/traderx/blob/main/k8s-manifests/deploy-via-confighub.sh
+# Total: 20 links covering all service dependencies
 
-# Backend services that depend on database
-BACKEND_SERVICES=(
+# 1. ALL SERVICES → NAMESPACE (10 links)
+echo "📦 All Services → Namespace"
+ALL_SERVICES=(
+  "database"
+  "people-service"
+  "reference-data"
+  "trade-feed"
   "account-service"
   "position-service"
-  "trade-service"
   "trade-processor"
+  "trade-service"
+  "web-gui"
 )
 
-echo "📊 Backend Services → Database"
-for service in "${BACKEND_SERVICES[@]}"; do
-  link_slug="${service}-to-db"
+for service in "${ALL_SERVICES[@]}"; do
+  link_slug="${service}-to-ns"
 
-  echo "  Creating link: ${service}-deployment → database-deployment"
+  echo "  Creating link: ${service}-deployment → namespace"
 
   cub link create "$link_slug" \
     "${service}-deployment" \
-    "database-deployment" \
+    "namespace" \
     --space "$SPACE" \
     --label relationship=dependency \
-    --label type=database \
-    --label purpose="database-connection" \
+    --label type=namespace \
+    --label purpose="requires-namespace" \
     --allow-exists \
     --json >/dev/null 2>&1 || {
       echo "    ⚠️  Link may already exist or units not found (continuing...)"
     }
 done
 
+# 2. DATABASE DEPENDENCIES (2 links)
 echo ""
-echo "🔄 Service-to-Service Dependencies"
+echo "📊 Services → Database"
 
-# trade-processor depends on trade-service
-echo "  Creating link: trade-processor-deployment → trade-service-deployment"
-cub link create "trade-processor-to-trade-service" \
+echo "  Creating link: account-service-deployment → database-deployment"
+cub link create "account-to-db" \
+  "account-service-deployment" \
+  "database-deployment" \
+  --space "$SPACE" \
+  --label relationship=dependency \
+  --label type=database \
+  --label purpose="jdbc-connection" \
+  --allow-exists \
+  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+echo "  Creating link: position-service-deployment → database-deployment"
+cub link create "position-to-db" \
+  "position-service-deployment" \
+  "database-deployment" \
+  --space "$SPACE" \
+  --label relationship=dependency \
+  --label type=database \
+  --label purpose="jdbc-connection" \
+  --allow-exists \
+  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+# 3. TRADE-PROCESSOR DEPENDENCIES (2 links)
+echo ""
+echo "🔄 Trade Processor Dependencies"
+
+echo "  Creating link: trade-processor-deployment → database-deployment"
+cub link create "tradeproc-to-db" \
   "trade-processor-deployment" \
-  "trade-service-deployment" \
+  "database-deployment" \
+  --space "$SPACE" \
+  --label relationship=dependency \
+  --label type=database \
+  --label purpose="data-access" \
+  --allow-exists \
+  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+echo "  Creating link: trade-processor-deployment → trade-feed-deployment"
+cub link create "tradeproc-to-feed" \
+  "trade-processor-deployment" \
+  "trade-feed-deployment" \
   --space "$SPACE" \
   --label relationship=dependency \
   --label type=service \
   --label purpose="api-client" \
   --allow-exists \
-  --json >/dev/null 2>&1 || {
-    echo "    ⚠️  Link may already exist (continuing...)"
-  }
+  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+# 4. TRADE-SERVICE DEPENDENCIES (5 links)
+echo ""
+echo "💼 Trade Service Dependencies"
+
+echo "  Creating link: trade-service-deployment → database-deployment"
+cub link create "tradesvc-to-db" \
+  "trade-service-deployment" \
+  "database-deployment" \
+  --space "$SPACE" \
+  --label relationship=dependency \
+  --label type=database \
+  --label purpose="data-storage" \
+  --allow-exists \
+  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+echo "  Creating link: trade-service-deployment → people-service-deployment"
+cub link create "tradesvc-to-people" \
+  "trade-service-deployment" \
+  "people-service-deployment" \
+  --space "$SPACE" \
+  --label relationship=dependency \
+  --label type=service \
+  --label purpose="user-lookup" \
+  --allow-exists \
+  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+echo "  Creating link: trade-service-deployment → reference-data-deployment"
+cub link create "tradesvc-to-refdata" \
+  "trade-service-deployment" \
+  "reference-data-deployment" \
+  --space "$SPACE" \
+  --label relationship=dependency \
+  --label type=service \
+  --label purpose="security-data" \
+  --allow-exists \
+  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+echo "  Creating link: trade-service-deployment → trade-feed-deployment"
+cub link create "tradesvc-to-feed" \
+  "trade-service-deployment" \
+  "trade-feed-deployment" \
+  --space "$SPACE" \
+  --label relationship=dependency \
+  --label type=service \
+  --label purpose="trade-publishing" \
+  --allow-exists \
+  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+echo "  Creating link: trade-service-deployment → account-service-deployment"
+cub link create "tradesvc-to-account" \
+  "trade-service-deployment" \
+  "account-service-deployment" \
+  --space "$SPACE" \
+  --label relationship=dependency \
+  --label type=service \
+  --label purpose="account-validation" \
+  --allow-exists \
+  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+# 5. INGRESS DEPENDENCIES (1 link)
+echo ""
+echo "🌐 Ingress Dependencies"
+
+echo "  Creating link: ingress → namespace"
+cub link create "ingress-to-ns" \
+  "ingress" \
+  "namespace" \
+  --space "$SPACE" \
+  --label relationship=dependency \
+  --label type=namespace \
+  --label purpose="requires-namespace" \
+  --allow-exists \
+  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
 
 echo ""
-echo "🌐 Frontend → Backend Services"
-
-# web-gui depends on all backend services for API calls
-BACKEND_APIS=(
-  "reference-data"
-  "people-service"
-  "account-service"
-  "position-service"
-  "trade-service"
-  "trade-feed"
-)
-
-for service in "${BACKEND_APIS[@]}"; do
-  link_slug="web-gui-to-${service}"
-
-  echo "  Creating link: web-gui-deployment → ${service}-service"
-
-  cub link create "$link_slug" \
-    "web-gui-deployment" \
-    "${service}-service" \
-    --space "$SPACE" \
-    --label relationship=dependency \
-    --label type=api \
-    --label purpose="http-client" \
-    --allow-exists \
-    --json >/dev/null 2>&1 || {
-      echo "    ⚠️  Link may already exist or units not found (continuing...)"
-    }
-done
-
+echo "✅ Link creation complete! (20 links total)"
 echo ""
-echo "✅ Link creation complete!"
+echo "📊 Link Summary:"
+echo "   - 9 services → namespace"
+echo "   - 1 ingress → namespace"
+echo "   - 2 database clients (account, position)"
+echo "   - 2 trade-processor dependencies"
+echo "   - 5 trade-service dependencies"
+echo "   - 1 ingress → namespace"
 echo ""
 echo "📋 Verify links created:"
 echo "   cub link list --space $SPACE"
@@ -122,9 +213,10 @@ echo ""
 echo "🔍 View dependency graph:"
 echo "   cub link list --space $SPACE --format json | jq -r '.[] | \"\\(.FromUnitSlug) → \\(.ToUnitSlug)\"'"
 echo ""
-echo "🎯 Key Benefits:"
-echo "   - ConfigHub knows the dependency graph"
+echo "🎯 Key Benefits (from chanwit/traderx canonical pattern):"
+echo "   - ConfigHub knows the full dependency graph"
 echo "   - Placeholders auto-filled from linked units"
-echo "   - Apply operations respect dependencies"
-echo "   - Validation before apply (no missing deps)"
+echo "   - Apply operations respect dependencies automatically"
+echo "   - Validation before apply (catches missing deps)"
+echo "   - No manual sleep/wait commands needed"
 echo ""

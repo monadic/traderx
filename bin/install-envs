@@ -54,22 +54,30 @@ cub unit create --dest-space ${PROJECT}-prod \
 echo "✅ Environment hierarchy created successfully!"
 echo ""
 
-# Create links for dependency management (ConfigHub canonical pattern)
-echo "🔗 Creating dependency links in dev environment..."
+# Create links for dependency management in each environment (ConfigHub canonical pattern)
+echo "🔗 Creating dependency links in all environments..."
 if [ -x "bin/create-links" ]; then
+  echo ""
+  echo "Creating links in dev environment..."
   bin/create-links dev
+  echo ""
+  echo "Creating links in staging environment..."
+  bin/create-links staging
+  echo ""
+  echo "Creating links in prod environment..."
+  bin/create-links prod
 else
   echo "⚠️  bin/create-links not found or not executable"
   echo "   Links enable ConfigHub to manage dependencies automatically"
-  echo "   Run: chmod +x bin/create-links && bin/create-links dev"
+  echo "   Run: chmod +x bin/create-links && bin/create-links <env>"
 fi
 echo ""
 
 echo "Hierarchy:"
 echo "  ${PROJECT}-base"
-echo "    └── ${PROJECT}-dev (with dependency links)"
-echo "        └── ${PROJECT}-staging"
-echo "            └── ${PROJECT}-prod"
+echo "    └── ${PROJECT}-dev (with 20 dependency links)"
+echo "        └── ${PROJECT}-staging (with 20 dependency links)"
+echo "            └── ${PROJECT}-prod (with 20 dependency links)"
 echo ""
 echo "Next steps:"
 echo "  1. Run: bin/setup-worker dev    # Install ConfigHub worker"

@@ -1,0 +1,86 @@
+#!/bin/bash
+set -euo pipefail
+
+# apply-with-links - Deploy TraderX using ConfigHub links and bulk apply
+# Based on chanwit/traderx canonical pattern
+# Uses bulk apply with WHERE clause - ConfigHub handles dependency ordering automatically
+
+ENV="${1:-dev}"
+
+PROJECT=$(bin/proj)
+if [ -z "$PROJECT" ]; then
+  echo "ERROR: Project not found. Run bin/install-base first."
+  exit 1
+fi
+
+SPACE="${PROJECT}-${ENV}"
+
+echo "🚀 Deploying TraderX to $ENV using link-based bulk apply..."
+echo ""
+echo "📦 Project: $PROJECT"
+echo "🌍 Environment: $ENV"
+echo "📍 Space: $SPACE"
+echo ""
+
+# Verify space exists
+if ! cub space get "$SPACE" >/dev/null 2>&1; then
+  echo "❌ Error: Space $SPACE does not exist"
+  echo "   Run bin/install-envs first"
+  exit 1
+fi
+
+# Verify links exist
+echo "🔍 Verifying dependency links..."
+LINK_COUNT=$(cub link list --space "$SPACE" --format json 2>/dev/null | jq '. | length' || echo "0")
+
+if [ "$LINK_COUNT" -lt 20 ]; then
+  echo "⚠️  Warning: Expected 20 links, found $LINK_COUNT"
+  echo "   Creating links now..."
+  bin/create-links "$ENV"
+  echo ""
+fi
+
+echo "✅ Found $LINK_COUNT dependency links"
+echo ""
+
+# Get target from worker
+echo "🎯 Getting deployment target..."
+TARGET_SLUG=$(cub target list --space "$SPACE" --format json 2>/dev/null | jq -r '.[0].Slug' || echo "")
+
+if [ -z "$TARGET_SLUG" ]; then
+  echo "❌ Error: No target found in space $SPACE"
+  echo "   Run bin/setup-worker $ENV first"
+  exit 1
+fi
+
+echo "✅ Target: $TARGET_SLUG"
+echo ""
+
+# Update target timeout to handle slow-starting services
+echo "⏱️  Setting target timeout to 15 minutes..."
+echo '{"WaitTimeout": "15m0s"}' | cub target update --space "$SPACE" --patch --target "$TARGET_SLUG" --from-stdin
+
+# Bulk apply with WHERE clause (ConfigHub respects links automatically)
+echo ""
+echo "🚀 Starting bulk apply (ConfigHub will handle dependency ordering)..."
+echo ""
+
+# Apply all units with label Component=data,service,frontend,ingress
+# ConfigHub uses links to determine correct order automatically
+cub unit apply --space "$SPACE" \
+  --where "Labels.Component IN ('data', 'service', 'frontend', 'namespace', 'ingress')" \
+  --timeout 15m
+
+echo ""
+echo "✅ Bulk apply complete!"
+echo ""
+echo "📊 Deployment Status:"
+kubectl get pods -n traderx-$ENV 2>/dev/null || echo "   Namespace not yet ready"
+echo ""
+echo "🔍 Verify deployment:"
+echo "   kubectl get pods -n traderx-$ENV"
+echo "   bin/health-check $ENV"
+echo ""
+echo "🔗 View dependency graph:"
+echo "   cub link list --space $SPACE --format json | jq -r '.[] | \"\\(.FromUnitSlug) → \\(.ToUnitSlug)\"'"
+echo ""

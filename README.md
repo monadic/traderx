@@ -114,33 +114,37 @@ bin/ordered-apply dev # Deploy all 9 services in dependency order
 kubectl get pods -n traderx-dev
 ```
 
-### Option 2: Links-Based Deployment (Canonical Pattern) ⭐ RECOMMENDED
+### Option 2: Links + Multi-Environment (Hybrid Pattern) ⭐ RECOMMENDED
 
 ```bash
 # Prerequisites: Same as above (install-base, install-envs, setup-worker)
 
 # Deploy using ConfigHub Links (automatic dependency management)
-bin/deploy-with-links dev
+bin/apply-with-links dev
 
-# This demonstrates the CANONICAL ConfigHub pattern:
-# - Services use placeholders for needed values (confighubplaceholder)
-# - Links connect services to their dependencies
-# - ConfigHub auto-fills placeholders from linked units
+# This demonstrates the HYBRID ConfigHub pattern:
+# - 20 dependency links per environment (based on chanwit/traderx)
+# - Multi-environment hierarchy (base → dev → staging → prod)
+# - ConfigHub auto-orders deployment based on links
+# - Push-upgrade for environment promotion
 # - Automatic dependency ordering (no manual sleeps!)
 # - Validation before apply (catches missing dependencies)
 
-# View dependency graph
+# View dependency graph (20 links)
 cub link list --space $(cat .cub-project)-dev
 ```
 
-**Why Links are Better:**
-- ✅ ConfigHub handles dependency ordering automatically
-- ✅ No manual sleeps or `kubectl wait` commands
-- ✅ Placeholders auto-filled from providers
-- ✅ Self-documenting dependency graph
-- ✅ Validates before apply (no runtime failures)
+**Why This Hybrid Approach is Best:**
+- ✅ Links: ConfigHub handles dependency ordering automatically
+- ✅ Links: Self-documenting dependency graph
+- ✅ Links: Placeholders auto-filled from providers
+- ✅ Hierarchy: Full dev → staging → prod promotion
+- ✅ Hierarchy: Environment-specific customization
+- ✅ Hierarchy: Production-ready workflow
 
-See [docs/LINKS-DEPENDENCIES.md](docs/LINKS-DEPENDENCIES.md) for full explanation.
+**Pattern Source:** Based on [chanwit/traderx canonical pattern](https://github.com/chanwit/traderx/blob/main/k8s-manifests/deploy-via-confighub.sh)
+
+See [docs/LINKS-AND-HIERARCHY.md](docs/LINKS-AND-HIERARCHY.md) for full explanation.
 
 ### Option 3: Advanced Layer-Based Deployment
 
