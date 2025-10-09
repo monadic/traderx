@@ -29,13 +29,13 @@ spec:
         - name: PEOPLE_SERVICE_URL
           value: "http://people-service:18089"
         - name: ACCOUNT_SERVICE_URL
-          value: "http://account-service:18091"
+          value: "http://account-service:18088"
         - name: REFERENCE_DATA_URL
           value: "http://reference-data:18085"
         - name: POSITION_SERVICE_URL
           value: "http://position-service:18090"
         - name: TRADE_FEED_URL
-          value: "http://trade-feed:18088"
+          value: "http://trade-feed:18086"
         resources:
           requests:
             memory: "1Gi"

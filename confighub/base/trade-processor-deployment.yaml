@@ -22,16 +22,6 @@ spec:
           value: "development"
         - name: TRADE_SERVICE_URL
           value: "http://trade-service:18092"
-        - name: SPRING_DATASOURCE_URL
-          value: "jdbc:h2:tcp://confighubplaceholder:999999999/mem:traderx;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS PUBLIC"
-        - name: SPRING_DATASOURCE_USERNAME
-          value: "confighubplaceholder"
-        - name: SPRING_DATASOURCE_PASSWORD
-          value: "confighubplaceholder"
-        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
-          value: "update"
-        - name: SPRING_JPA_DATABASE_PLATFORM
-          value: "org.hibernate.dialect.H2Dialect"
         resources:
           requests:
             memory: "256Mi"
