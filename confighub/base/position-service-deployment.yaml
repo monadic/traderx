@@ -26,13 +26,7 @@ spec:
         - name: POSITION_SERVICE_PORT
           value: "18090"
         - name: SPRING_DATASOURCE_URL
-          value: "jdbc:h2:tcp://database:18082/mem:traderx;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS PUBLIC"
-        - name: SPRING_DATASOURCE_USERNAME
-          value: "sa"
-        - name: SPRING_DATASOURCE_PASSWORD
-          value: "sa"
-        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
-          value: "update"
+          value: "jdbc:h2:tcp://database:18082/traderx;DB_CLOSE_DELAY=-1"
         - name: SPRING_JPA_DATABASE_PLATFORM
           value: "org.hibernate.dialect.H2Dialect"
         livenessProbe:

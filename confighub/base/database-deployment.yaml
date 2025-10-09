@@ -26,6 +26,8 @@ spec:
       - name: database
         image: ghcr.io/finos/traderx/database:latest
         imagePullPolicy: Always
+        workingDir: /database
+        command: ["/bin/bash", "-c", "./run.sh"]
         ports:
         - name: tcp
           containerPort: 18082
@@ -43,6 +45,8 @@ spec:
           value: "sa"
         - name: H2_OPTIONS
           value: "-ifNotExists"
+        - name: DATABASE_DATA_DIR
+          value: "/app/_data"
         resources:
           requests:
             memory: "256Mi"

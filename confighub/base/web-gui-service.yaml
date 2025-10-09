@@ -7,7 +7,7 @@ spec:
   selector:
     app: web-gui
   ports:
-  - port: 18080
-    targetPort: 18080
+  - port: 18093
+    targetPort: 18093
     protocol: TCP
   type: ClusterIP

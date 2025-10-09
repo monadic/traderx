@@ -18,12 +18,11 @@ spec:
       - name: web-gui
         image: ghcr.io/finos/traderx/web-front-end-angular:latest
         ports:
-        - containerPort: 18080
+        - containerPort: 18093
+        workingDir: /app
+        command: ["/bin/sh"]
+        args: ["-c", "sed -i 's/\"baseHref\": \".\"/\"baseHref\": \"\\/\"/' angular.json; npm run start-prod"]
         env:
-        - name: NODE_ENV
-          value: "development"
-        - name: PORT
-          value: "18080"
         - name: TRADE_SERVICE_URL
           value: "http://trade-service:18092"
         - name: PEOPLE_SERVICE_URL
@@ -38,8 +37,8 @@ spec:
           value: "http://trade-feed:18086"
         resources:
           requests:
-            memory: "1Gi"
+            memory: "768Mi"
             cpu: "500m"
           limits:
-            memory: "2Gi"
+            memory: "1536Mi"
             cpu: "1000m"

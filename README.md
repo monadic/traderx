@@ -210,6 +210,82 @@ The dashboard should now be accessible at **http://localhost:8080**
 3. **Create a trade** - Enter trade details (security, quantity, price, etc.)
 4. **Submit** - Execute the trade
 
+## 📝 Note on TraderX Features and Functions
+
+### ✅ Working Features
+
+**Account Management**
+- ✅ Create new accounts via UI
+- ✅ View existing accounts
+- ✅ Account data persists in H2 database
+- ✅ Database writes confirmed working
+
+**API Routing (via Ingress)**
+- ✅ Backend API endpoints: `/account-service/*`, `/people-service/*`, etc.
+- ✅ Frontend assets load correctly
+- ✅ Nginx ingress with path rewriting for backend services
+- ✅ No rewrite for frontend to preserve asset paths
+
+**Database**
+- ✅ H2 database initializes with schema
+- ✅ Sample accounts loaded (7 pre-configured accounts)
+- ✅ Write operations working
+- ✅ Persistent storage in `/app/_data/traderx.mv.db`
+
+**Health Probes**
+- ✅ HTTP liveness probes configured
+- ✅ HTTP readiness probes configured
+- ✅ Services restart automatically on failure
+
+**Resource Optimization**
+- ✅ Memory limits tuned for Kind cluster
+- ✅ Database: 1 replica (reduced from 2 for Kind)
+- ✅ Web-GUI: 768Mi-1536Mi (increased for Angular production build)
+- ✅ All backend services: 256Mi-512Mi
+
+### ⚠️  Known Limitations
+
+**People Service (User Search)**
+- ❌ No user data in dev mode (Development profile uses in-memory storage)
+- ❌ Cannot search for users to add to accounts via UI
+- ❌ No API endpoint to create new people
+- ❌ People service doesn't connect to shared database in dev profile
+
+**Root Cause**: `people-service` uses `ASPNETCORE_ENVIRONMENT: Development` which:
+- Starts with empty in-memory user database
+- Doesn't load seed data
+- Doesn't connect to shared H2 database
+
+**Workarounds**:
+1. **Skip user assignment** - Accounts function without assigned users
+2. **Use production profile** - Set `ASPNETCORE_ENVIRONMENT: Production` (requires additional configuration)
+3. **Manual database insert** - Not available (H2 Shell tools not in container)
+
+### 🔄 Deployment Changes from FINOS Original
+
+**Changes Based on [chanwit/traderx](https://github.com/chanwit/traderx)**:
+1. ✅ HTTP health probes (liveness + readiness) added to all services
+2. ⚠️  Database replicas: 1 instead of 2 (Kind memory constraint)
+3. ✅ Database initialization script runs automatically
+4. ✅ Web-GUI baseHref fixed for production mode
+5. ✅ Separate ingress resources for backend/frontend routing
+6. ✅ Account-service port corrected (18088)
+7. ✅ Memory allocations optimized for local Kind clusters
+
+**Ingress Configuration**:
+- `traderx-backend` - Backend services with path rewriting (`/$2`)
+- `traderx-frontend` - Frontend without rewriting (preserves asset paths)
+
+### 📋 Feature Roadmap
+
+**To Enable Full User Management**:
+1. Configure people-service production profile
+2. Add database connection environment variables
+3. Load seed data for users
+4. Enable user-account associations
+
+**Current Focus**: All core trading functionality works. User assignment is an optional feature for demonstration purposes.
+
 ### Connected Services
 
 All 9 services are running and connected:
