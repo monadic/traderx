@@ -1,0 +1,8 @@
+{
+  "Labels": {
+    "Environment": "Development"
+  },
+  "Annotations": {
+    "Description": "This is a dev space."
+  }
+}

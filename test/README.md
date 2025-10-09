@@ -7,6 +7,9 @@ Comprehensive test coverage for TraderX ConfigHub deployment.
 ```
 test/
 ├── README.md                           # This file
+├── scripts/                            # Standard test library (ConfigHub conventions)
+│   ├── README.md                       # Test library documentation
+│   └── test-lib.sh                     # Common test functions
 ├── unit/                               # Unit tests
 │   ├── test-scripts.sh                # Script validation tests
 │   ├── confighub-api/                 # ConfigHub API tests
@@ -14,7 +17,8 @@ test/
 │   ├── sdk/                           # SDK usage tests
 │   └── workers/                       # Worker tests
 ├── integration/                        # Integration tests
-│   └── test-deployment.sh             # Full deployment tests
+│   ├── test-deployment.sh             # Full deployment tests
+│   └── test-traderx-bulk-apply.sh     # Bulk apply with topological sort
 ├── ui/                                # UI and output tests
 │   ├── ascii-tables/                  # ASCII table validation
 │   └── dashboards/                    # Dashboard tests
@@ -24,6 +28,11 @@ test/
 └── strategies/                        # Claude agent testing strategies
     ├── TESTING-STRATEGY.md
     └── COVERAGE-REQUIREMENTS.md
+
+test-data/                              # Standard test fixtures (ConfigHub conventions)
+├── README.md                           # Test data documentation
+├── metadata.json                       # Default unit labels/annotations
+└── space-metadata.json                 # Default space metadata
 ```
 
 ## Quick Start
@@ -107,7 +116,7 @@ test/
 
 Required:
 - `kubectl` - Kubernetes CLI
-- `cub` - ConfigHub CLI
+- `cub` - ConfigHub CLI (latest version)
 - `bash` 3.2+ - Shell
 - `jq` - JSON processor
 
@@ -115,6 +124,14 @@ Optional:
 - `shellcheck` - Shell script linting
 - `python3` or `ruby` - YAML validation
 - `kind` - Local Kubernetes (for full tests)
+
+### ConfigHub Standard Test Library
+
+This project uses ConfigHub's standard test infrastructure from:
+- https://github.com/confighubai/confighub/blob/main/test/scripts/test-lib.sh
+- https://github.com/confighubai/confighub/tree/main/test-data
+
+See `test/scripts/README.md` for test library documentation.
 
 ### Environment Setup
 ```bash
@@ -284,8 +301,35 @@ cleanup
 
 - **Testing Strategy**: See `strategies/TESTING-STRATEGY.md`
 - **Coverage Requirements**: See `strategies/COVERAGE-REQUIREMENTS.md`
-- **Test Helpers**: See `test-helpers.sh`
+- **Test Library**: See `scripts/README.md`
+- **Test Data**: See `../test-data/README.md`
 - **CI Integration**: See `.github/workflows/test.yml` (if exists)
+
+## ConfigHub Standards
+
+This project follows ConfigHub standard testing conventions:
+
+### Test Library Functions
+- `createSpace`, `verifySpaceExists`
+- `createWithinSpace`, `verifyEntityWithinSpaceExists`
+- `checkEntityWithinSpaceListLength`
+- `awaitEntityWithinSpace`
+
+See `test/scripts/README.md` for complete API.
+
+### Test Data
+- `test-data/metadata.json` - Default labels/annotations
+- `test-data/space-metadata.json` - Space metadata
+- YAML fixtures for each service
+
+### Validation Standards
+All YAML manifests are validated for:
+- Valid YAML syntax
+- Kubernetes API compliance
+- Resource limits and requests
+- Security contexts (runAsNonRoot, readOnlyRootFilesystem)
+- Health probes (liveness and readiness)
+- Required labels (app.kubernetes.io/name, app.kubernetes.io/part-of)
 
 ## Related Documentation
 

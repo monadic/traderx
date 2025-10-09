@@ -1,0 +1,10 @@
+{
+  "Labels": {
+    "Layer": "Application",
+    "Tier": "Backend",
+    "Otherlabel": "labelvalue"
+  },
+  "Annotations": {
+    "Description": "This is a config unit"
+  }
+}
