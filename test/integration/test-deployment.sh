@@ -136,7 +136,7 @@ echo "--------------------------------------"
 
 if [ -n "${PROJECT:-}" ]; then
   test_start "Units exist in base space"
-  unit_count=$(cub unit list --space "${PROJECT}-base" --format json 2>/dev/null | jq length)
+  unit_count=$(cub unit list --space "${PROJECT}-base" --json 2>/dev/null | jq length)
   if [ "$unit_count" -ge 17 ]; then
     test_pass "Found $unit_count units (expected >= 17)"
   else
@@ -144,7 +144,7 @@ if [ -n "${PROJECT:-}" ]; then
   fi
 
   test_start "Units exist in $TEST_ENV space"
-  unit_count=$(cub unit list --space "${PROJECT}-${TEST_ENV}" --format json 2>/dev/null | jq length)
+  unit_count=$(cub unit list --space "${PROJECT}-${TEST_ENV}" --json 2>/dev/null | jq length)
   if [ "$unit_count" -ge 17 ]; then
     test_pass "Found $unit_count units"
   else
