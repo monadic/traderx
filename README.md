@@ -210,111 +210,25 @@ The dashboard should now be accessible at **http://localhost:8080**
 3. **Create a trade** - Enter trade details (security, quantity, price, etc.)
 4. **Submit** - Execute the trade
 
-## 📝 Note on TraderX Features and Functions
+## 📝 Deployment Status
 
-### ✅ Working Features
+### ✅ All Services Operational (9/9)
 
-**Account Management**
-- ✅ Create new accounts via UI
-- ✅ View existing accounts
-- ✅ Account data persists in H2 database
-- ✅ Database writes confirmed working
+All TraderX services are running with ConfigHub-managed deployment:
+- ✅ Account management working (create/view accounts, H2 database persistence)
+- ✅ API routing via Ingress (backend + frontend paths)
+- ✅ Health probes configured (liveness + readiness)
+- ✅ Resource limits optimized for local clusters
 
-**API Routing (via Ingress)**
-- ✅ Backend API endpoints: `/account-service/*`, `/people-service/*`, etc.
-- ✅ Frontend assets load correctly
-- ✅ Nginx ingress with path rewriting for backend services
-- ✅ No rewrite for frontend to preserve asset paths
+### ⚠️ Known Limitation
 
-**Database**
-- ✅ H2 database initializes with schema
-- ✅ Sample accounts loaded (7 pre-configured accounts)
-- ✅ Write operations working
-- ✅ Persistent storage in `/app/_data/traderx.mv.db`
+**People Service**: Uses development profile with in-memory storage. User search in UI is unavailable. Accounts work without user assignment.
 
-**Health Probes**
-- ✅ HTTP liveness probes configured
-- ✅ HTTP readiness probes configured
-- ✅ Services restart automatically on failure
-
-**Resource Optimization**
-- ✅ Memory limits tuned for Kind cluster
-- ✅ Database: 1 replica (reduced from 2 for Kind)
-- ✅ Web-GUI: 768Mi-1536Mi (increased for Angular production build)
-- ✅ All backend services: 256Mi-512Mi
-
-### ⚠️  Known Limitations
-
-**People Service (User Search)**
-- ❌ No user data in dev mode (Development profile uses in-memory storage)
-- ❌ Cannot search for users to add to accounts via UI
-- ❌ No API endpoint to create new people
-- ❌ People service doesn't connect to shared database in dev profile
-
-**Root Cause**: `people-service` uses `ASPNETCORE_ENVIRONMENT: Development` which:
-- Starts with empty in-memory user database
-- Doesn't load seed data
-- Doesn't connect to shared H2 database
-
-**Workarounds**:
-1. **Skip user assignment** - Accounts function without assigned users
-2. **Use production profile** - Set `ASPNETCORE_ENVIRONMENT: Production` (requires additional configuration)
-3. **Manual database insert** - Not available (H2 Shell tools not in container)
-
-### 🔄 Deployment Changes from FINOS Original
-
-**Changes Based on [chanwit/traderx](https://github.com/chanwit/traderx)**:
-1. ✅ HTTP health probes (liveness + readiness) added to all services
-2. ⚠️  Database replicas: 1 instead of 2 (Kind memory constraint)
-3. ✅ Database initialization script runs automatically
-4. ✅ Web-GUI baseHref fixed for production mode
-5. ✅ Separate ingress resources for backend/frontend routing
-6. ✅ Account-service port corrected (18088)
-7. ✅ Memory allocations optimized for local Kind clusters
-
-**Ingress Configuration**:
-- `traderx-backend` - Backend services with path rewriting (`/$2`)
-- `traderx-frontend` - Frontend without rewriting (preserves asset paths)
-
-### 📋 Feature Roadmap
-
-**To Enable Full User Management**:
-1. Configure people-service production profile
-2. Add database connection environment variables
-3. Load seed data for users
-4. Enable user-account associations
-
-**Current Focus**: All core trading functionality works. User assignment is an optional feature for demonstration purposes.
-
-### Connected Services
-
-All 9 services are running and connected:
-
-| Service | Status | Function |
-|---------|--------|----------|
-| database | ✅ Running | H2 database storing trade data |
-| account-service | ✅ Running | Managing accounts |
-| people-service | ✅ Running | Managing users |
-| position-service | ✅ Running | Tracking positions |
-| reference-data | ✅ Running | Security reference data |
-| trade-service | ✅ Running | Processing trades |
-| trade-feed | ✅ Running | Real-time trade feed |
-| trade-processor | ✅ Running | Background processing |
-| web-gui | ✅ Running | Dashboard interface |
-
-### Checking Service Health
+**For full deployment details and workarounds**, see [TRADERX-FIX-SUMMARY.md](TRADERX-FIX-SUMMARY.md).
 
 ```bash
-# View all pods
+# Check all services
 kubectl get pods -n traderx-dev
-
-# View all services
-kubectl get svc -n traderx-dev
-
-# Check specific service logs
-kubectl logs -n traderx-dev deployment/trade-service --tail=50
-
-# Run health check script
 bin/health-check dev
 ```
 
@@ -323,49 +237,10 @@ bin/health-check dev
 ```
 traderx/
 ├── bin/                         # Deployment scripts
-│   ├── install-base            # Create ConfigHub base structure
-│   ├── install-envs            # Set up environment hierarchy
-│   ├── apply-all               # Deploy all services to environment
-│   ├── promote                 # Push-upgrade between environments
-│   ├── setup-worker            # Install ConfigHub worker
-│   ├── ordered-apply           # Apply services in dependency order
-│   ├── health-check            # Comprehensive health validation (NEW)
-│   ├── rollback                # Rollback to previous revision (NEW)
-│   ├── validate-deployment     # Full deployment validation (NEW)
-│   ├── blue-green-deploy       # Zero-downtime deployments (NEW)
-│   └── proj                    # Get project name
-│
-├── confighub/
-│   └── base/                   # ConfigHub unit definitions (17 units)
-│       ├── namespace.yaml
-│       ├── reference-data-deployment.yaml
-│       ├── reference-data-service.yaml
-│       ├── people-service-deployment.yaml
-│       ├── people-service-service.yaml
-│       ├── account-service-deployment.yaml
-│       ├── account-service-service.yaml
-│       ├── position-service-deployment.yaml
-│       ├── position-service-service.yaml
-│       ├── trade-service-deployment.yaml
-│       ├── trade-service-service.yaml
-│       ├── trade-processor-deployment.yaml
-│       ├── trade-feed-deployment.yaml
-│       ├── trade-feed-service.yaml
-│       ├── web-gui-deployment.yaml
-│       ├── web-gui-service.yaml
-│       └── ingress.yaml
-│
-├── test/                        # Test suites
-│   ├── unit/test-scripts.sh   # Unit tests (88.6% coverage)
-│   └── integration/test-deployment.sh  # Integration tests
-│
+├── confighub/base/              # ConfigHub unit definitions (17 units)
+├── test/                        # Test suites (unit, integration, e2e)
 ├── docs/                        # Documentation
-│   ├── ADVANCED-CONFIGHUB-PATTERNS.md  # Production patterns
-│   └── AUTOUPDATES-AND-GITOPS.md       # Two-state model
-│
-├── WORKING-STATUS.md            # Current deployment status (6/9)
-├── PROJECT-SUMMARY.md           # Comprehensive project summary
-└── archive/                     # Historical documentation
+└── migration-notes/             # Implementation history
 ```
 
 ## 🔄 ConfigHub Workers (Replace Tilt)
@@ -387,241 +262,48 @@ cub run set-image-reference \
 
 ## 🤖 DevOps as Apps Integration
 
-This deployment integrates with these [DevOps as Apps](https://github.com/monadic/devops-examples) tools:
+Integrates with [DevOps as Apps](https://github.com/monadic/devops-examples) tools:
+- **drift-detector**: Watches TraderX spaces for configuration drift
+- **cost-optimizer**: Analyzes costs for all services with AI recommendations
 
-### Drift Detection
-```bash
-# Deploy drift-detector to watch TraderX
-cd ../devops-examples/drift-detector
-bin/install-base
-# Configure to watch traderx-* spaces
-```
+## 📚 ConfigHub Patterns
 
-### Cost Optimization
-```bash
-# Deploy cost-optimizer to analyze TraderX costs
-cd ../devops-examples/cost-optimizer
-bin/install-base
-# Shows cost breakdown for all 8 services
-```
+This deployment demonstrates 9 of 12 canonical ConfigHub patterns:
+- ✅ Unique naming, space hierarchy, filters, bulk operations
+- ✅ Label-based organization, event-driven workers
+- ✅ Two-state management (update + apply)
+- ✅ Link management for dependencies
 
-### Combined View
-```bash
-# See drift + cost for any service
-bin/combined-view trade-service
-
-# Output:
-# 📊 Drift: replicas drifted (3 → 5)
-# 💰 Cost: +$50/month
-# 🔧 Fix: cub unit update trade-service --patch...
-```
-
-## 📚 ConfigHub Patterns Used
-
-This deployment demonstrates core ConfigHub patterns:
-
-### Actively Used ✅
-
-1. **Unique Project Naming** - `cub space new-prefix` generates unique names
-2. **Space Hierarchy** - base → dev → staging → prod
-3. **Filter Creation** - Layer-based filters (backend, frontend, data)
-4. **Filter-Based Deployment** - Deploy by layer using `--where` clauses
-5. **Bulk Operations** - Update multiple units via filters
-6. **Label-Based Organization** - Layer, order, tech, service labels
-7. **Event-Driven** - Workers respond to ConfigHub changes
-8. **Two-State Management** - Explicit update + apply workflow
-9. **Link Management** ⭐ NEW - Dependency tracking via links + needs/provides
-
-### Available But Not Demonstrated
-
-10. **Sets for Grouping** - Not used (cub set command not available in current CLI)
-11. **Version Promotion** - `cub run set-image-reference` (pattern exists, not used)
-12. **Changesets** - Atomic multi-service updates (pattern exists, not used)
-13. **Lateral Promotion** - Region-by-region rollout (pattern exists, not used)
-14. **Revision Management** - Full history and rollback (available via ConfigHub)
-
-See [docs/ADVANCED-CONFIGHUB-PATTERNS.md](docs/ADVANCED-CONFIGHUB-PATTERNS.md) for implementation details.
+See [docs/ADVANCED-CONFIGHUB-PATTERNS.md](docs/ADVANCED-CONFIGHUB-PATTERNS.md) for details.
 
 ## 🧪 Testing
 
-TraderX includes comprehensive test coverage with different infrastructure requirements.
-
-### Test Types
-
-**Unit Tests** (No infrastructure required - < 30 seconds):
-- Script syntax validation
-- YAML manifest validation
-- Code quality checks
-- ConfigHub-only command enforcement
-
-**Integration Tests** (Infrastructure required - 2-5 minutes):
-- ConfigHub API operations
-- Worker apply operations
-- Service connectivity
-- Full deployment validation
-
-**End-to-End Tests** (Full deployment required - 5-10 minutes):
-- Complete user workflows
-- Multi-environment promotion
-- Rollback scenarios
-
-### Option 1: Quick Validation (No Infrastructure)
-
-Run unit tests only - validates code quality without requiring ConfigHub or Kubernetes:
-
 ```bash
-# Quick unit tests
+# Quick validation (no infrastructure)
 ./test/run-all-tests.sh --quick
 
-# Result: 70/70 tests in < 30 seconds
-# - All scripts syntactically valid
-# - YAML manifests valid
-# - Best practices enforced
-# - ConfigHub-only commands verified
-```
-
-### Option 2: Full Testing (Infrastructure Required)
-
-Set up infrastructure first, then run complete test suite:
-
-```bash
-# 1. Authenticate with ConfigHub
-cub auth login
-
-# 2. Create ConfigHub structure
-bin/install-base      # Creates spaces, units, filters
-bin/install-envs      # Creates dev/staging/prod hierarchy
-
-# 3. Set up Kubernetes (if not already available)
-kind create cluster --name traderx-test
-kubectl cluster-info
-
-# 4. Install ConfigHub worker
-bin/setup-worker dev
-
-# 5. Deploy application
-bin/ordered-apply dev
-
-# 6. Run full test suite
-./test/run-all-tests.sh
-
-# Result: All tests including integration and E2E
-# - Unit tests: 70/70
-# - Integration tests: Full deployment validation
-# - E2E tests: Complete workflows
-```
-
-### Test Suites
-
-```bash
-# Unit tests only
-./test/unit/test-scripts.sh
-
-# ConfigHub API tests
-./test/unit/confighub-api/test-api.sh
-
-# Integration tests (requires infrastructure)
-./test/integration/test-deployment.sh dev
-
-# End-to-end workflow tests
-./test/e2e/test-full-workflow.sh
-
-# All tests
+# Full test suite (requires ConfigHub + K8s)
 ./test/run-all-tests.sh
 ```
 
-### CI/CD Testing
-
-```bash
-# CI mode (non-interactive)
-./test/run-all-tests.sh --ci
-
-# With coverage report
-./test/run-all-tests.sh --coverage
-```
-
-For detailed testing documentation, see [test/README.md](test/README.md).
+**Test Coverage**: Unit tests (70/70), integration tests, end-to-end workflows. See [test/README.md](test/README.md) for details.
 
 ## 📈 Monitoring
 
-### ConfigHub Dashboard
-- Visit https://hub.confighub.com
-- Navigate to your TraderX spaces
-- View units, live state, and history
-
-### Kubernetes Dashboard
-```bash
-# Port-forward to see all services
-kubectl port-forward -n traderx-dev svc/web-gui 18080:18080
-kubectl port-forward -n traderx-dev svc/trade-service 18092:18092
-```
-
-### Logs
-```bash
-# View logs for any service
-kubectl logs -n traderx-dev -l app=trade-service --follow
-
-# View worker logs
-kubectl logs -n traderx-dev -l app=confighub-worker --follow
-```
+- **ConfigHub Dashboard**: https://hub.confighub.com (view units, live state, history)
+- **Service Logs**: `kubectl logs -n traderx-dev -l app=<service> --follow`
+- **Worker Logs**: `kubectl logs -n traderx-dev -l app=confighub-worker --follow`
 
 ## 🔧 Troubleshooting
 
-### Quick Fixes
+For detailed troubleshooting, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
-**If you see "missing TargetID on Unit" error**
-```bash
-# Run the quick fix script
-bin/quick-fix
-```
-
-**Docker not running**
-```bash
-# Start Docker Desktop on macOS
-open -a Docker
-
-# Verify Docker is running
-docker info
-```
-
-**Services not starting**
-```bash
-# Check deployment order (reference-data must start first)
-bin/ordered-apply dev
-
-# Run health checks
-bin/health-check dev
-
-# Verify ConfigHub units
-cub unit list --space mellow-muzzle-traderx-dev
-```
-
-**Worker not applying changes**
-```bash
-# Check worker status
-kubectl get pods -n traderx-dev -l app=confighub-worker
-
-# View worker logs
-kubectl logs -n traderx-dev -l app=confighub-worker
-```
-
-**Deployment failed**
-```bash
-# Rollback to previous version
-bin/rollback dev
-
-# Validate rollback
-bin/validate-deployment dev
-```
-
-**Cost too high**
-```bash
-# Deploy cost-optimizer to analyze
-cd ../devops-examples/cost-optimizer
-./cost-optimizer
-
-# Output: Recommendations to reduce costs
-```
+**Quick Fixes:**
+- Missing TargetID: `bin/quick-fix`
+- Docker not running: `open -a Docker`
+- Services not starting: `bin/ordered-apply dev` then `bin/health-check dev`
+- Worker issues: Check logs with `kubectl logs -n traderx-dev -l app=confighub-worker`
+- Deployment failed: `bin/rollback dev`
 
 ## 🤝 Contributing
 
@@ -635,6 +317,15 @@ This is a demonstration of ConfigHub patterns applied to FINOS TraderX. Contribu
 ## 📄 License
 
 Apache 2.0 - See [LICENSE](LICENSE)
+
+## 📚 Documentation
+
+- [QUICKSTART.md](QUICKSTART.md) - 15-minute deployment guide
+- [RUNBOOK.md](RUNBOOK.md) - Operational procedures
+- [docs/ADVANCED-CONFIGHUB-PATTERNS.md](docs/ADVANCED-CONFIGHUB-PATTERNS.md) - Production patterns
+- [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) - Common issues and fixes
+- [migration-notes/](migration-notes/) - Implementation history and multi-agent development
+- [test/README.md](test/README.md) - Testing documentation
 
 ## 🔗 Related Projects
 
