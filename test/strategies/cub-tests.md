@@ -115,75 +115,97 @@ cub unit list --space dev --where "Data.spec.replicas > 2"
 
 ## Output Format
 
-For each cub command found, the analyzer outputs:
+For each cub command found, the analyzer outputs clear status indicators:
+- `[PASS]` - Validation succeeded
+- `[FAIL]` - Validation failed
+- `[WARN]` - Warning or common errors detected
+- `[N/A]` - Not applicable (e.g., no WHERE clause present)
+- `[INFO]` - Informational messages (corrections, suggestions)
+
+The output is designed to be readable in plain text files and searchable:
+```bash
+grep "[FAIL]" analysis.txt     # Find all failures
+grep "[WARN]" analysis.txt     # Find all warnings
+```
+
+### Example: Valid Command
 
 ```
+==========================================
 FILE: bin/install-base
 LINE 10: cub space create myspace --label app=test
+==========================================
 
 SYNTAX VALIDATION:
-  ✓ Valid
+  [PASS] Valid syntax
 
 GRAMMAR VALIDATION:
-  ⊘ No WHERE clause (N/A)
+  [N/A] No WHERE clause present
 
-COMMON ERRORS CHECK:
-  ✓ No common errors detected
+COMMON ERRORS:
+  [PASS] No common errors detected
 
 SEMANTIC EXPLANATION:
-  📝 Creates a new ConfigHub space named 'myspace'
+  Creates a new ConfigHub space named 'myspace'
     Pre-condition: Space 'myspace' does not exist
     Post-condition: Space 'myspace' exists and is accessible
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+------------------------------------------
 ```
 
 ### Example: Invalid Command
 
 ```
+==========================================
 FILE: bin/bulk-update
 LINE 62: cub unit update --space dev --patch '{"spec":{"replicas":3}}'
+==========================================
 
 SYNTAX VALIDATION:
-  ✗ Invalid
-    Error: Cannot pass inline JSON with --patch. Use --from-stdin (with pipe/heredoc)
-           or --filename. For fine-grained Data changes, use 'cub function do' instead
+  [FAIL] Invalid syntax
+  Error: --patch requires one of: --from-stdin, --filename, --restore, --upgrade,
+         --merge-source, --label, --delete-gate, --destroy-gate, or --changeset
 
 GRAMMAR VALIDATION:
-  ⊘ No WHERE clause (N/A)
+  [N/A] No WHERE clause present
 
-COMMON ERRORS CHECK:
-  ⚠ Common errors found:
+COMMON ERRORS:
+  [WARN] Common errors found:
     - Inline JSON with --patch is invalid. Use --from-stdin (with pipe) or use
       'cub function do' for fine-grained changes
 
-  💡 CORRECTION:
+  [INFO] Suggested corrections:
     For monolithic Data update:
       echo '{...}' | cub unit update <unit> --from-stdin --space <space>
     For fine-grained Data update:
       cub function do --space <space> --where "Slug = '<unit>'" set-replicas 3
 
 SEMANTIC EXPLANATION:
-  📝 INTENDED to update replicas to 3
-    CORRECT: cub function do --space dev --where "Slug = 'myunit'" set-replicas 3
+  Updates unit with patch operation
+    Pre-condition: Unit exists
+    Post-condition: Unit updated based on patch operation
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+------------------------------------------
 ```
 
 ### Summary Output
 
 ```
-══════════════════════════════════════════════════════════════
+==============================================================
 ANALYSIS SUMMARY
-══════════════════════════════════════════════════════════════
+==============================================================
 Files analyzed:       15
 Commands found:       142
 Valid commands:       138
 Invalid commands:     4
-══════════════════════════════════════════════════════════════
+==============================================================
 
-⚠ Found 4 invalid command(s). See details above.
+[WARN] Found 4 invalid command(s). See details above.
 ```
+
+Exit codes:
+- `0` - All commands valid ([PASS])
+- `1` - Found invalid commands ([WARN])
 
 ## Validation Framework
 

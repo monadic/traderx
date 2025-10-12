@@ -19,14 +19,26 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Source the validation framework
 source "$SCRIPT_DIR/test/lib/cub-test-framework.sh"
 
-# Colors for output (source from framework)
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-BOLD='\033[1m'
-UNDERLINE='\033[4m'
-NC='\033[0m'
+# Colors for output - only use if outputting to terminal
+if [ -t 1 ]; then
+    # Output is a terminal (TTY) - use colors
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    BLUE='\033[0;34m'
+    BOLD='\033[1m'
+    UNDERLINE='\033[4m'
+    NC='\033[0m'
+else
+    # Output is redirected to file - no colors
+    RED=''
+    GREEN=''
+    YELLOW=''
+    BLUE=''
+    BOLD=''
+    UNDERLINE=''
+    NC=''
+fi
 
 # Analysis counters
 TOTAL_FILES=0
@@ -226,58 +238,60 @@ function analyze_command {
     TOTAL_COMMANDS=$((TOTAL_COMMANDS + 1))
 
     echo ""
-    echo -e "${BOLD}FILE:${NC} $file"
-    echo -e "${BOLD}LINE $line_num:${NC} $command"
-    echo ""
+    echo "=========================================="
+    echo "FILE: $file"
+    echo "LINE $line_num: $command"
+    echo "=========================================="
 
     # 1. SYNTAX VALIDATION
-    echo -e "${BOLD}SYNTAX VALIDATION:${NC}"
+    echo ""
+    echo "SYNTAX VALIDATION:"
     if validate_cub_syntax "$command"; then
-        echo -e "  ${GREEN}✓ Valid${NC}"
+        echo -e "  ${GREEN}[PASS]${NC} Valid syntax"
         VALID_COMMANDS=$((VALID_COMMANDS + 1))
     else
-        echo -e "  ${RED}✗ Invalid${NC}"
-        echo -e "  ${RED}  Error: $CUB_SYNTAX_ERROR${NC}"
+        echo -e "  ${RED}[FAIL]${NC} Invalid syntax"
+        echo "  Error: $CUB_SYNTAX_ERROR"
         INVALID_COMMANDS=$((INVALID_COMMANDS + 1))
     fi
 
     # 2. GRAMMAR VALIDATION (if WHERE clause present)
     echo ""
-    echo -e "${BOLD}GRAMMAR VALIDATION:${NC}"
+    echo "GRAMMAR VALIDATION:"
     if echo "$command" | grep -q "\-\-where"; then
         # Extract WHERE clause (BSD grep compatible)
         local where_clause=$(echo "$command" | sed -n 's/.*--where[[:space:]]\+["'\'']\([^"'\'']*\)["'\''].*/\1/p' || echo "")
         if [ -n "$where_clause" ]; then
             if validate_where_clause "$where_clause"; then
-                echo -e "  ${GREEN}✓ Valid WHERE clause${NC}"
-                echo "    Clause: $where_clause"
+                echo -e "  ${GREEN}[PASS]${NC} Valid WHERE clause"
+                echo "  Clause: $where_clause"
             else
-                echo -e "  ${RED}✗ Invalid WHERE clause${NC}"
-                echo -e "  ${RED}  Error: $WHERE_CLAUSE_ERROR${NC}"
-                echo "    Clause: $where_clause"
+                echo -e "  ${RED}[FAIL]${NC} Invalid WHERE clause"
+                echo "  Error: $WHERE_CLAUSE_ERROR"
+                echo "  Clause: $where_clause"
             fi
         else
-            echo "  ⊘ No WHERE clause found"
+            echo -e "  ${YELLOW}[WARN]${NC} WHERE flag present but no clause extracted"
         fi
     else
-        echo "  ⊘ No WHERE clause (N/A)"
+        echo "  [N/A] No WHERE clause present"
     fi
 
     # 3. COMMON ERRORS CHECK
     echo ""
-    echo -e "${BOLD}COMMON ERRORS CHECK:${NC}"
+    echo "COMMON ERRORS:"
     if detect_common_errors "$command"; then
-        echo -e "  ${GREEN}✓ No common errors detected${NC}"
+        echo -e "  ${GREEN}[PASS]${NC} No common errors detected"
     else
-        echo -e "  ${YELLOW}⚠ Common errors found:${NC}"
+        echo -e "  ${YELLOW}[WARN]${NC} Common errors found:"
         for error in "${CUB_COMMON_ERRORS[@]}"; do
-            echo -e "  ${YELLOW}  - $error${NC}"
+            echo "    - $error"
         done
 
         # Suggest corrections
         if echo "$command" | grep -qE "\-\-patch +['\"]?\{"; then
             echo ""
-            echo -e "  ${BLUE}💡 CORRECTION:${NC}"
+            echo -e "  ${BLUE}[INFO]${NC} Suggested corrections:"
             echo "    For monolithic Data update:"
             echo "      echo '{...}' | cub unit update <unit> --from-stdin --space <space>"
             echo "    For fine-grained Data update:"
@@ -287,12 +301,12 @@ function analyze_command {
 
     # 4. SEMANTIC EXPLANATION
     echo ""
-    echo -e "${BOLD}SEMANTIC EXPLANATION:${NC}"
-    echo -e "  ${BLUE}📝${NC} $(generate_semantic_explanation "$command" | head -1)"
+    echo "SEMANTIC EXPLANATION:"
+    echo "  $(generate_semantic_explanation "$command" | head -1)"
     generate_semantic_explanation "$command" | tail -n +2 | sed 's/^/  /'
 
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "------------------------------------------"
 }
 
 #============================================================================
@@ -306,12 +320,12 @@ function scan_file {
     TOTAL_FILES=$((TOTAL_FILES + 1))
 
     echo ""
-    echo "══════════════════════════════════════════════════════════════"
-    echo -e "${BOLD}${UNDERLINE}Analyzing: $file${NC}"
-    echo "══════════════════════════════════════════════════════════════"
+    echo "=============================================================="
+    echo "Analyzing: $file"
+    echo "=============================================================="
 
     if [ ! -f "$file" ]; then
-        echo -e "${RED}Error: File not found: $file${NC}"
+        echo "[ERROR] File not found: $file"
         return 1
     fi
 
@@ -438,27 +452,27 @@ if [ -f "$INPUT" ]; then
 elif [ -d "$INPUT" ]; then
     scan_directory "$INPUT"
 else
-    echo -e "${RED}Error: Input not found: $INPUT${NC}"
+    echo "[ERROR] Input not found: $INPUT"
     echo "Must be a file or directory"
     exit 1
 fi
 
 # Print summary
 echo ""
-echo "══════════════════════════════════════════════════════════════"
-echo -e "${BOLD}ANALYSIS SUMMARY${NC}"
-echo "══════════════════════════════════════════════════════════════"
+echo "=============================================================="
+echo "ANALYSIS SUMMARY"
+echo "=============================================================="
 echo "Files analyzed:       $TOTAL_FILES"
 echo "Commands found:       $TOTAL_COMMANDS"
 echo -e "${GREEN}Valid commands:       $VALID_COMMANDS${NC}"
 echo -e "${RED}Invalid commands:     $INVALID_COMMANDS${NC}"
-echo "══════════════════════════════════════════════════════════════"
+echo "=============================================================="
 echo ""
 
 if [ $INVALID_COMMANDS -eq 0 ]; then
-    echo -e "${GREEN}✓ All commands are valid!${NC}"
+    echo -e "${GREEN}[PASS]${NC} All commands are valid!"
     exit 0
 else
-    echo -e "${YELLOW}⚠ Found $INVALID_COMMANDS invalid command(s). See details above.${NC}"
+    echo -e "${YELLOW}[WARN]${NC} Found $INVALID_COMMANDS invalid command(s). See details above."
     exit 1
 fi
