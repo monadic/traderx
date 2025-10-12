@@ -106,7 +106,7 @@ else
   echo ""
 
   # Analyze common issues
-  if ! cub auth status &>/dev/null; then
+  if ! cub auth get-token &>/dev/null; then
     echo -e "${YELLOW}Issue: Not authenticated with ConfigHub${NC}"
     echo "Recommendation: Run 'cub auth login'"
     echo ""

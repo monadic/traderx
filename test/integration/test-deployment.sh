@@ -82,7 +82,7 @@ echo "Test Suite 1: ConfigHub Authentication"
 echo "--------------------------------------"
 
 test_start "ConfigHub authentication"
-if cub auth status &>/dev/null; then
+if cub auth get-token &>/dev/null; then
   test_pass "Authenticated with ConfigHub"
 else
   test_fail "Not authenticated with ConfigHub"

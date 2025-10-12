@@ -52,7 +52,7 @@ if ! command -v cub &>/dev/null; then
   exit 1
 fi
 
-if ! cub auth status &>/dev/null; then
+if ! cub auth get-token &>/dev/null; then
   echo "Error: Not authenticated with ConfigHub"
   exit 1
 fi

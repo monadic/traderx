@@ -87,7 +87,7 @@ case "$OPERATION" in
     # Update each unit (ConfigHub doesn't support bulk patch yet, so loop)
     for unit in $UNITS; do
       info "  Updating $unit..."
-      cub unit update $unit --space $SPACE --patch "{\"spec\":{\"replicas\":$VALUE}}" || {
+      echo "{\"spec\":{\"replicas\":$VALUE}}" | cub unit update $unit --space $SPACE --patch --from-stdin || {
         warn "Failed to update $unit"
         continue
       }

@@ -162,10 +162,11 @@ cub unit create "${SERVICE}-${NEW_COLOR}-deployment" \
   || warn "Unit may already exist"
 
 # Update image version
-cub unit update "${SERVICE}-${NEW_COLOR}-deployment" \
+echo "{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"$SERVICE\",\"image\":\"finos/traderx-$SERVICE:$VERSION\"}]}}}}" | \
+  cub unit update "${SERVICE}-${NEW_COLOR}-deployment" \
   --space "$SPACE" \
   --patch \
-  --data "{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"$SERVICE\",\"image\":\"finos/traderx-$SERVICE:$VERSION\"}]}}}}"
+  --from-stdin
 
 # Apply deployment
 cub unit apply "${SERVICE}-${NEW_COLOR}-deployment" \
