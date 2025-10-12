@@ -92,7 +92,7 @@ TraderX includes 9 microservices:
 Before deploying, verify your ConfigHub + Kubernetes environment:
 
 ```bash
-test/test-confighub-k8s
+curl -fsSL https://raw.githubusercontent.com/monadic/devops-sdk/main/test-confighub-k8s | bash
 ```
 
 This runs the [ConfigHub + Kubernetes Mini TCK](https://github.com/monadic/devops-sdk/blob/main/TCK.md) to verify your setup is working correctly. Expected output: `🎉 SUCCESS! ConfigHub + Kubernetes integration verified`

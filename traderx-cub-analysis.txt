@@ -1,0 +1,2109 @@
+cub-test-framework.sh loaded successfully
+
+╔════════════════════════════════════════════════════════════╗
+║         ConfigHub cub CLI Command Analyzer                ║
+╚════════════════════════════════════════════════════════════╝
+
+Scanning directory: bin/
+
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/proj[0m
+══════════════════════════════════════════════════════════════
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/validate-deployment[0m
+══════════════════════════════════════════════════════════════
+
+[1mFILE:[0m bin/validate-deployment
+[1mLINE 86:[0m cub space get "$SPACE" &>/dev/null; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Retrieves information about space '"$SPACE"'
+    Pre-condition: Space '"$SPACE"' exists
+    Post-condition: Space information returned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/validate-deployment
+[1mLINE 103:[0m cub unit list --space "$SPACE" --format json 2>/dev/null | jq length)
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Lists all units in space ''
+    Pre-condition: Space '' exists
+    Post-condition: List of units returned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/validate-deployment
+[1mLINE 310:[0m cub unit get-live-state "${service}-deployment" --space "$SPACE" &>/dev/null; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'get-live-state' operation on unit '"${service}-deployment"' in space ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/apply-with-links[0m
+══════════════════════════════════════════════════════════════
+
+[1mFILE:[0m bin/apply-with-links
+[1mLINE 26:[0m cub space get "$SPACE" >/dev/null 2>&1; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Retrieves information about space '"$SPACE"'
+    Pre-condition: Space '"$SPACE"' exists
+    Post-condition: Space information returned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/apply-with-links
+[1mLINE 34:[0m cub link list --space "$SPACE" --format json 2>/dev/null | jq '. | length' || echo "0")
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on links
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/apply-with-links
+[1mLINE 48:[0m cub target list --space "$SPACE" --format json 2>/dev/null | jq -r '.[0].Slug' || echo "")
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on target ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/apply-with-links
+[1mLINE 61:[0m cub target update --space "$SPACE" --patch --target "$TARGET_SLUG" --from-stdin
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'update' operation on target ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/apply-with-links
+[1mLINE 70:[0m cub unit apply --space "$SPACE"  --where "Labels.Component IN ('data', 'service', 'frontend', 'namespace', 'ingress')"  --timeout 15m
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause found
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Applies unit '' to target infrastructure in space ''
+    Pre-condition: Unit '' exists, target configured, worker running
+    Post-condition: Configuration deployed to Kubernetes/cloud
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/apply-with-links
+[1mLINE 85:[0m cub link list --space $SPACE --format json | jq -r '.[] | \"\(.FromUnitSlug) → \(.ToUnitSlug)\"'"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on links
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/create-links[0m
+══════════════════════════════════════════════════════════════
+
+[1mFILE:[0m bin/create-links
+[1mLINE 28:[0m cub space get "$SPACE" >/dev/null 2>&1; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Retrieves information about space '"$SPACE"'
+    Pre-condition: Space '"$SPACE"' exists
+    Post-condition: Space information returned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/create-links
+[1mLINE 60:[0m cub link create "$link_slug"  "${service}-deployment"  "namespace"  --space "$SPACE"  --label relationship=dependency  --label type=namespace  --label purpose="requires-namespace"  --allow-exists  --json >/dev/null 2>&1 || {
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates links connecting app units to infrastructure units
+    Pre-condition: Source and destination units exist
+    Post-condition: Units linked, relationships established
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/create-links
+[1mLINE 78:[0m cub link create "account-to-db"  "account-service-deployment"  "database-deployment"  --space "$SPACE"  --label relationship=dependency  --label type=database  --label purpose="jdbc-connection"  --allow-exists  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates links connecting app units to infrastructure units
+    Pre-condition: Source and destination units exist
+    Post-condition: Units linked, relationships established
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/create-links
+[1mLINE 89:[0m cub link create "position-to-db"  "position-service-deployment"  "database-deployment"  --space "$SPACE"  --label relationship=dependency  --label type=database  --label purpose="jdbc-connection"  --allow-exists  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates links connecting app units to infrastructure units
+    Pre-condition: Source and destination units exist
+    Post-condition: Units linked, relationships established
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/create-links
+[1mLINE 104:[0m cub link create "tradeproc-to-db"  "trade-processor-deployment"  "database-deployment"  --space "$SPACE"  --label relationship=dependency  --label type=database  --label purpose="data-access"  --allow-exists  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates links connecting app units to infrastructure units
+    Pre-condition: Source and destination units exist
+    Post-condition: Units linked, relationships established
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/create-links
+[1mLINE 115:[0m cub link create "tradeproc-to-feed"  "trade-processor-deployment"  "trade-feed-deployment"  --space "$SPACE"  --label relationship=dependency  --label type=service  --label purpose="api-client"  --allow-exists  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates links connecting app units to infrastructure units
+    Pre-condition: Source and destination units exist
+    Post-condition: Units linked, relationships established
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/create-links
+[1mLINE 130:[0m cub link create "tradesvc-to-db"  "trade-service-deployment"  "database-deployment"  --space "$SPACE"  --label relationship=dependency  --label type=database  --label purpose="data-storage"  --allow-exists  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates links connecting app units to infrastructure units
+    Pre-condition: Source and destination units exist
+    Post-condition: Units linked, relationships established
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/create-links
+[1mLINE 141:[0m cub link create "tradesvc-to-people"  "trade-service-deployment"  "people-service-deployment"  --space "$SPACE"  --label relationship=dependency  --label type=service  --label purpose="user-lookup"  --allow-exists  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates links connecting app units to infrastructure units
+    Pre-condition: Source and destination units exist
+    Post-condition: Units linked, relationships established
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/create-links
+[1mLINE 152:[0m cub link create "tradesvc-to-refdata"  "trade-service-deployment"  "reference-data-deployment"  --space "$SPACE"  --label relationship=dependency  --label type=service  --label purpose="security-data"  --allow-exists  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates links connecting app units to infrastructure units
+    Pre-condition: Source and destination units exist
+    Post-condition: Units linked, relationships established
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/create-links
+[1mLINE 163:[0m cub link create "tradesvc-to-feed"  "trade-service-deployment"  "trade-feed-deployment"  --space "$SPACE"  --label relationship=dependency  --label type=service  --label purpose="trade-publishing"  --allow-exists  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates links connecting app units to infrastructure units
+    Pre-condition: Source and destination units exist
+    Post-condition: Units linked, relationships established
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/create-links
+[1mLINE 174:[0m cub link create "tradesvc-to-account"  "trade-service-deployment"  "account-service-deployment"  --space "$SPACE"  --label relationship=dependency  --label type=service  --label purpose="account-validation"  --allow-exists  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates links connecting app units to infrastructure units
+    Pre-condition: Source and destination units exist
+    Post-condition: Units linked, relationships established
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/create-links
+[1mLINE 189:[0m cub link create "ingress-to-ns"  "ingress"  "namespace"  --space "$SPACE"  --label relationship=dependency  --label type=namespace  --label purpose="requires-namespace"  --allow-exists  --json >/dev/null 2>&1 || echo "    ⚠️  Link may already exist"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates links connecting app units to infrastructure units
+    Pre-condition: Source and destination units exist
+    Post-condition: Units linked, relationships established
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/create-links
+[1mLINE 211:[0m cub link list --space $SPACE"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on links
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/create-links
+[1mLINE 214:[0m cub link list --space $SPACE --format json | jq -r '.[] | \"\(.FromUnitSlug) → \(.ToUnitSlug)\"'"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on links
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/deploy-with-links[0m
+══════════════════════════════════════════════════════════════
+
+[1mFILE:[0m bin/deploy-with-links
+[1mLINE 40:[0m cub space get "$SPACE" >/dev/null 2>&1; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Retrieves information about space '"$SPACE"'
+    Pre-condition: Space '"$SPACE"' exists
+    Post-condition: Space information returned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/deploy-with-links
+[1mLINE 48:[0m cub link list --space "$SPACE" --format json 2>/dev/null | jq 'length' || echo "0")
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on links
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/deploy-with-links
+[1mLINE 87:[0m cub unit apply --space "$SPACE" --where "*" --wait
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause found
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Applies unit '' to target infrastructure in space ''
+    Pre-condition: Unit '' exists, target configured, worker running
+    Post-condition: Configuration deployed to Kubernetes/cloud
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/deploy-with-links
+[1mLINE 96:[0m cub link list --space $SPACE --format json | jq -r '.[] | \"\(.FromUnitSlug) → \(.ToUnitSlug)\"'"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on links
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/deploy-with-links
+[1mLINE 99:[0m cub unit list --space $SPACE --format json | jq '.[] | {slug: .Slug, needs_upgrade: .UpgradeNeeded, applied: .Applied}'"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Lists all units in space ''
+    Pre-condition: Space '' exists
+    Post-condition: List of units returned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/deploy-with-links
+[1mLINE 102:[0m cub unit get-live-state <unit-name> --space $SPACE"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'get-live-state' operation on unit '<unit-name>' in space ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/promote[0m
+══════════════════════════════════════════════════════════════
+
+[1mFILE:[0m bin/promote
+[1mLINE 30:[0m cub unit update --patch --upgrade --space $TO_SPACE
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Updates unit '' by propagating changes from upstream (push-upgrade pattern)
+    Pre-condition: Unit '' has upstream unit with newer changes
+    Post-condition: Unit '' updated to match upstream
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/promote
+[1mLINE 35:[0m cub unit diff --space $TO_SPACE"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'diff' operation on unit '' in space ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/promote
+[1mLINE 39:[0m cub revision list --space $TO_SPACE"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on revision ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/deploy-by-layer[0m
+══════════════════════════════════════════════════════════════
+
+[1mFILE:[0m bin/deploy-by-layer
+[1mLINE 29:[0m cub space list | grep -q "$SPACE"; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Lists all ConfigHub spaces accessible to the user
+    Pre-condition: User is authenticated
+    Post-condition: List of spaces returned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/deploy-by-layer
+[1mLINE 36:[0m cub worker list --space $SPACE | grep -c "$PROJECT-worker" || true)
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on worker ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/deploy-by-layer
+[1mLINE 50:[0m cub unit apply --space $SPACE --where "Labels.order = '0'" || {
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause found
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Applies unit '' to target infrastructure in space ''
+    Pre-condition: Unit '' exists, target configured, worker running
+    Post-condition: Configuration deployed to Kubernetes/cloud
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/deploy-by-layer
+[1mLINE 65:[0m cub unit apply --space $SPACE --where "Labels.layer = 'data'" || {
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause found
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Applies unit '' to target infrastructure in space ''
+    Pre-condition: Unit '' exists, target configured, worker running
+    Post-condition: Configuration deployed to Kubernetes/cloud
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/deploy-by-layer
+[1mLINE 84:[0m cub unit apply --space $SPACE --where "Labels.layer = 'backend'" || {
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause found
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Applies unit '' to target infrastructure in space ''
+    Pre-condition: Unit '' exists, target configured, worker running
+    Post-condition: Configuration deployed to Kubernetes/cloud
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/deploy-by-layer
+[1mLINE 105:[0m cub unit apply --space $SPACE --where "Labels.layer = 'frontend'" || {
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause found
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Applies unit '' to target infrastructure in space ''
+    Pre-condition: Unit '' exists, target configured, worker running
+    Post-condition: Configuration deployed to Kubernetes/cloud
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/setup-worker[0m
+══════════════════════════════════════════════════════════════
+
+[1mFILE:[0m bin/setup-worker
+[1mLINE 40:[0m cub worker list --space $SPACE 2>/dev/null | grep -q $WORKER_NAME; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on worker ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/setup-worker
+[1mLINE 44:[0m cub worker create $WORKER_NAME --space $SPACE
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'create' operation on worker '$WORKER_NAME'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/setup-worker
+[1mLINE 50:[0m cub worker install $WORKER_NAME  --namespace confighub  --space $SPACE  --include-secret  --export > /tmp/worker-manifest.yaml
+
+[1mSYNTAX VALIDATION:[0m
+  [0;31m✗ Invalid[0m
+  [0;31m  Error: Invalid verb 'install' for entity 'worker'. Valid: create get list update delete[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'install' operation on worker '$WORKER_NAME'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/setup-worker
+[1mLINE 64:[0m cub worker list --space $SPACE 2>/dev/null | grep -q "Ready"; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on worker ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/setup-worker
+[1mLINE 67:[0m cub worker list --space $SPACE
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on worker ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/setup-worker
+[1mLINE 71:[0m cub worker list --space $SPACE"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on worker ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/setup-worker
+[1mLINE 87:[0m cub unit set-target $TARGET_SLUG --where "Space.Slug = '$SPACE'" --space $SPACE
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause found
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'set-target' operation on unit '$TARGET_SLUG' in space ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/bulk-update[0m
+══════════════════════════════════════════════════════════════
+
+[1mFILE:[0m bin/bulk-update
+[1mLINE 64:[0m cub space list | grep -q "$SPACE"; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Lists all ConfigHub spaces accessible to the user
+    Pre-condition: User is authenticated
+    Post-condition: List of spaces returned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/bulk-update
+[1mLINE 79:[0m cub unit list --space $SPACE --format json |  jq -r ".[] | select(.Labels.layer == \"$LAYER\" and (.Slug | contains(\"deployment\"))) | .Slug")
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [1;33m⚠ Common errors found:[0m
+  [1;33m  - CONTAINS not supported in WHERE clauses[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Lists all units in space ''
+    Pre-condition: Space '' exists
+    Post-condition: List of units returned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/bulk-update
+[1mLINE 90:[0m cub unit update $unit --space $SPACE --patch "{\"spec\":{\"replicas\":$VALUE}}" || {
+
+[1mSYNTAX VALIDATION:[0m
+  [0;31m✗ Invalid[0m
+  [0;31m  Error: --patch requires one of: --from-stdin, --filename, --restore, --upgrade, --merge-source, --label, --delete-gate, --destroy-gate, or --changeset[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [1;33m⚠ Common errors found:[0m
+  [1;33m  - --patch requires additional flags[0m
+  [1;33m  - Inline JSON with --patch is invalid. Use --from-stdin (with pipe) or use 'cub function do' for fine-grained changes[0m
+
+  [0;34m💡 CORRECTION:[0m
+    For monolithic Data update:
+      echo '{...}' | cub unit update <unit> --from-stdin --space <space>
+    For fine-grained Data update:
+      cub function do --space <space> --where "Slug = '<unit>'" set-replicas 3
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Updates unit '$unit' with patch operation
+    Pre-condition: Unit '$unit' exists
+    Post-condition: Unit updated based on patch operation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/bulk-update
+[1mLINE 96:[0m cub unit apply $unit --space $SPACE || {
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Applies unit '$unit' to target infrastructure in space ''
+    Pre-condition: Unit '$unit' exists, target configured, worker running
+    Post-condition: Configuration deployed to Kubernetes/cloud
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/bulk-update
+[1mLINE 126:[0m cub unit list --space $SPACE | grep -E "(Slug|$LAYER)" | head -20
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Lists all units in space ''
+    Pre-condition: Space '' exists
+    Post-condition: List of units returned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/bulk-update
+[1mLINE 140:[0m cub unit update --patch --where \"Labels.layer = '$LAYER'\" \"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;31m✗ Invalid[0m
+  [0;31m  Error: --patch requires one of: --from-stdin, --filename, --restore, --upgrade, --merge-source, --label, --delete-gate, --destroy-gate, or --changeset[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause found
+
+[1mCOMMON ERRORS CHECK:[0m
+  [1;33m⚠ Common errors found:[0m
+  [1;33m  - --patch requires additional flags[0m
+  [1;33m  - --space flag required for this command[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Updates unit '' with patch operation
+    Pre-condition: Unit '' exists
+    Post-condition: Unit updated based on patch operation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/install-base[0m
+══════════════════════════════════════════════════════════════
+
+[1mFILE:[0m bin/install-base
+[1mLINE 10:[0m cub space new-prefix)
+
+[1mSYNTAX VALIDATION:[0m
+  [0;31m✗ Invalid[0m
+  [0;31m  Error: Invalid verb 'new-prefix)' for entity 'space'. Valid: create get list update delete new-prefix[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'new-prefix)' operation on space ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-base
+[1mLINE 19:[0m cub space create ${project}-base  --label project=$project  --label environment=base || echo "Space ${project}-base already exists"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a new ConfigHub space named '${project}-base'
+    Pre-condition: Space '${project}-base' does not exist
+    Post-condition: Space '${project}-base' exists and is accessible
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-base
+[1mLINE 25:[0m cub space create ${project}-filters  --label project=$project  --label type=filters || echo "Space ${project}-filters already exists"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a new ConfigHub space named '${project}-filters'
+    Pre-condition: Space '${project}-filters' does not exist
+    Post-condition: Space '${project}-filters' exists and is accessible
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-base
+[1mLINE 33:[0m cub filter create all Unit  --space ${project}-filters  --where-field "Space.Labels.project = '$project'"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause found
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a filter named 'all' for querying units with WHERE clause
+    Pre-condition: Filter 'all' does not exist
+    Post-condition: Filter 'all' exists and can be used to query units
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-base
+[1mLINE 37:[0m cub filter create frontend Unit  --space ${project}-filters  --where-field "Labels.layer = 'frontend'"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause found
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a filter named 'frontend' for querying units with WHERE clause
+    Pre-condition: Filter 'frontend' does not exist
+    Post-condition: Filter 'frontend' exists and can be used to query units
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-base
+[1mLINE 41:[0m cub filter create backend Unit  --space ${project}-filters  --where-field "Labels.layer = 'backend'"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause found
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a filter named 'backend' for querying units with WHERE clause
+    Pre-condition: Filter 'backend' does not exist
+    Post-condition: Filter 'backend' exists and can be used to query units
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-base
+[1mLINE 45:[0m cub filter create data Unit  --space ${project}-filters  --where-field "Labels.layer = 'data'"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause found
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a filter named 'data' for querying units with WHERE clause
+    Pre-condition: Filter 'data' does not exist
+    Post-condition: Filter 'data' exists and can be used to query units
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-base
+[1mLINE 50:[0m cub filter create core-services Unit  --space ${project}-filters  --where-field "Labels.service IN ('reference-data', 'people-service', 'account-service')"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause found
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a filter named 'core-services' for querying units with WHERE clause
+    Pre-condition: Filter 'core-services' does not exist
+    Post-condition: Filter 'core-services' exists and can be used to query units
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-base
+[1mLINE 54:[0m cub filter create trading-services Unit  --space ${project}-filters  --where-field "Labels.service IN ('trade-service', 'trade-processor', 'trade-feed')"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause found
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a filter named 'trading-services' for querying units with WHERE clause
+    Pre-condition: Filter 'trading-services' does not exist
+    Post-condition: Filter 'trading-services' exists and can be used to query units
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-base
+[1mLINE 59:[0m cub filter create ordered Unit  --space ${project}-filters  --where-field "Labels.order IN ('0','1','2','3','4','5','6','7','8','9')"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause found
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a filter named 'ordered' for querying units with WHERE clause
+    Pre-condition: Filter 'ordered' does not exist
+    Post-condition: Filter 'ordered' exists and can be used to query units
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-base
+[1mLINE 66:[0m cub CLI version)"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;31m✗ Invalid[0m
+  [0;31m  Error: Invalid entity type: CLI[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'version)"' operation on CLI ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-base
+[1mLINE 83:[0m cub unit create --space ${project}-base  --label type=infra  --label order=0  namespace  confighub/base/namespace.yaml
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a new configuration unit '' in space ''
+    Pre-condition: Space '' exists, unit '' does not exist
+    Post-condition: Unit '' exists with provided configuration data
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-base
+[1mLINE 92:[0m cub unit create --space ${project}-base  --label service=database  --label layer=data  --label order=0  database-deployment  confighub/base/database-deployment.yaml
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a new configuration unit '' in space ''
+    Pre-condition: Space '' exists, unit '' does not exist
+    Post-condition: Unit '' exists with provided configuration data
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-base
+[1mLINE 101:[0m cub unit create --space ${project}-base  --label service=database  --label layer=data  database-service  confighub/base/database-service.yaml
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a new configuration unit '' in space ''
+    Pre-condition: Space '' exists, unit '' does not exist
+    Post-condition: Unit '' exists with provided configuration data
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-base
+[1mLINE 127:[0m cub unit create --space ${project}-base  --label service=$service  --label layer=$layer  --label tech=$tech  --label order=$order  --label port=$port  ${service}-deployment  confighub/base/${service}-deployment.yaml
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a new configuration unit '' in space ''
+    Pre-condition: Space '' exists, unit '' does not exist
+    Post-condition: Unit '' exists with provided configuration data
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-base
+[1mLINE 139:[0m cub unit create --space ${project}-base  --label service=$service  --label layer=$layer  --label port=$port  ${service}-service  confighub/base/${service}-service.yaml
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a new configuration unit '' in space ''
+    Pre-condition: Space '' exists, unit '' does not exist
+    Post-condition: Unit '' exists with provided configuration data
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-base
+[1mLINE 151:[0m cub unit create --space ${project}-base  --label type=infra  --label order=9  ingress  confighub/base/ingress.yaml
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a new configuration unit '' in space ''
+    Pre-condition: Space '' exists, unit '' does not exist
+    Post-condition: Unit '' exists with provided configuration data
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/ordered-apply[0m
+══════════════════════════════════════════════════════════════
+
+[1mFILE:[0m bin/ordered-apply
+[1mLINE 159:[0m cub unit apply namespace --space $SPACE"; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Applies unit 'namespace' to target infrastructure in space ''
+    Pre-condition: Unit 'namespace' exists, target configured, worker running
+    Post-condition: Configuration deployed to Kubernetes/cloud
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/ordered-apply
+[1mLINE 206:[0m cub unit update ${service}-deployment --space $SPACE confighub/base/${service}-deployment.yaml"; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Updates configuration data for unit '${service}-deployment' in space '' (monolithic)
+    Pre-condition: Unit '${service}-deployment' exists
+    Post-condition: Unit data replaced with new configuration
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/ordered-apply
+[1mLINE 213:[0m cub unit apply ${service}-deployment --space $SPACE"; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Applies unit '${service}-deployment' to target infrastructure in space ''
+    Pre-condition: Unit '${service}-deployment' exists, target configured, worker running
+    Post-condition: Configuration deployed to Kubernetes/cloud
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/ordered-apply
+[1mLINE 220:[0m cub unit get ${service}-service --space $SPACE &>/dev/null; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Retrieves full configuration for unit '${service}-service' from space ''
+    Pre-condition: Unit '${service}-service' exists
+    Post-condition: Unit configuration returned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/ordered-apply
+[1mLINE 223:[0m cub unit update ${service}-service --space $SPACE confighub/base/${service}-service.yaml" || true
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Updates configuration data for unit '${service}-service' in space '' (monolithic)
+    Pre-condition: Unit '${service}-service' exists
+    Post-condition: Unit data replaced with new configuration
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/ordered-apply
+[1mLINE 227:[0m cub unit apply ${service}-service --space $SPACE"; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Applies unit '${service}-service' to target infrastructure in space ''
+    Pre-condition: Unit '${service}-service' exists, target configured, worker running
+    Post-condition: Configuration deployed to Kubernetes/cloud
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/ordered-apply
+[1mLINE 257:[0m cub unit apply ingress --space $SPACE"; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Applies unit 'ingress' to target infrastructure in space ''
+    Pre-condition: Unit 'ingress' exists, target configured, worker running
+    Post-condition: Configuration deployed to Kubernetes/cloud
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/quick-fix[0m
+══════════════════════════════════════════════════════════════
+
+[1mFILE:[0m bin/quick-fix
+[1mLINE 28:[0m cub &> /dev/null; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;31m✗ Invalid[0m
+  [0;31m  Error: Invalid entity type: &>[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs '/dev/null;' operation on &> 'then'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/quick-fix
+[1mLINE 29:[0m cub CLI not found. Please install ConfigHub CLI first.${NC}"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;31m✗ Invalid[0m
+  [0;31m  Error: Invalid entity type: CLI[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'not' operation on CLI 'found.'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/quick-fix
+[1mLINE 55:[0m cub worker list --space "$SPACE" 2>/dev/null | grep -q "$WORKER_NAME"; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on worker ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/quick-fix
+[1mLINE 69:[0m cub worker install "$WORKER_NAME"  --space "$SPACE"  --namespace confighub  --include-secret  --wait  --deployment-name "${PROJECT}-worker-${ENV}" 2>&1 | tee /tmp/worker-install.log; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;31m✗ Invalid[0m
+  [0;31m  Error: Invalid verb 'install' for entity 'worker'. Valid: create get list update delete[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'install' operation on worker '"$WORKER_NAME"'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/quick-fix
+[1mLINE 90:[0m cub target list --space "$SPACE" 2>/dev/null | grep -v "^NAME" | head -1 | awk '{print $1}')
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on target ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/quick-fix
+[1mLINE 97:[0m cub target list --space "$SPACE" 2>/dev/null | grep -v "^NAME" | head -1 | awk '{print $1}')
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on target ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/quick-fix
+[1mLINE 104:[0m cub target create "${WORKER_NAME}-target"  --space "$SPACE"  --provider-type kubernetes  --worker "$WORKER_NAME" 2>&1; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'create' operation on target '"${WORKER_NAME}-target"'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/quick-fix
+[1mLINE 129:[0m cub unit set-target "$TARGET"  --space "$SPACE"  --where "Slug LIKE '%'" 2>&1; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause found
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'set-target' operation on unit '"$TARGET"' in space ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/quick-fix
+[1mLINE 140:[0m cub unit list --space "$SPACE" 2>/dev/null | grep -c "$TARGET" || echo "0")
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Lists all units in space ''
+    Pre-condition: Space '' exists
+    Post-condition: List of units returned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/quick-fix
+[1mLINE 141:[0m cub unit list --space "$SPACE" 2>/dev/null | grep -c "^[a-z]" || echo "0")
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Lists all units in space ''
+    Pre-condition: Space '' exists
+    Post-condition: List of units returned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/quick-fix
+[1mLINE 148:[0m cub unit set-target namespace "$TARGET" --space "$SPACE" 2>&1; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'set-target' operation on unit 'namespace' in space ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/quick-fix
+[1mLINE 156:[0m cub unit apply namespace --space "$SPACE" 2>&1; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Applies unit 'namespace' to target infrastructure in space ''
+    Pre-condition: Unit 'namespace' exists, target configured, worker running
+    Post-condition: Configuration deployed to Kubernetes/cloud
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/quick-fix
+[1mLINE 188:[0m cub unit update \$unit --space $SPACE --data-file \$f"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Updates configuration data for unit '\$unit' in space '' (monolithic)
+    Pre-condition: Unit '\$unit' exists
+    Post-condition: Unit data replaced with new configuration
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/quick-fix
+[1mLINE 208:[0m cub worker list --space $SPACE"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on worker ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/quick-fix
+[1mLINE 209:[0m cub target list --space $SPACE"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'list' operation on target ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/quick-fix
+[1mLINE 210:[0m cub unit list --space $SPACE"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Lists all units in space ''
+    Pre-condition: Space '' exists
+    Post-condition: List of units returned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/install-envs[0m
+══════════════════════════════════════════════════════════════
+
+[1mFILE:[0m bin/install-envs
+[1mLINE 17:[0m cub space create ${PROJECT}-dev  --label project=$PROJECT  --label environment=dev
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a new ConfigHub space named '${PROJECT}-dev'
+    Pre-condition: Space '${PROJECT}-dev' does not exist
+    Post-condition: Space '${PROJECT}-dev' exists and is accessible
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-envs
+[1mLINE 22:[0m cub unit create --dest-space ${PROJECT}-dev  --space ${PROJECT}-base  --filter ${PROJECT}-filters/all  --label targetable=true  --label environment=dev
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a new configuration unit '' in space ''
+    Pre-condition: Space '' exists, unit '' does not exist
+    Post-condition: Unit '' exists with provided configuration data
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-envs
+[1mLINE 30:[0m cub space create ${PROJECT}-staging  --label project=$PROJECT  --label environment=staging
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a new ConfigHub space named '${PROJECT}-staging'
+    Pre-condition: Space '${PROJECT}-staging' does not exist
+    Post-condition: Space '${PROJECT}-staging' exists and is accessible
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-envs
+[1mLINE 35:[0m cub unit create --dest-space ${PROJECT}-staging  --space ${PROJECT}-dev  --filter ${PROJECT}-filters/all  --label targetable=true  --label environment=staging
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a new configuration unit '' in space ''
+    Pre-condition: Space '' exists, unit '' does not exist
+    Post-condition: Unit '' exists with provided configuration data
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-envs
+[1mLINE 43:[0m cub space create ${PROJECT}-prod  --label project=$PROJECT  --label environment=prod
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a new ConfigHub space named '${PROJECT}-prod'
+    Pre-condition: Space '${PROJECT}-prod' does not exist
+    Post-condition: Space '${PROJECT}-prod' exists and is accessible
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-envs
+[1mLINE 48:[0m cub unit create --dest-space ${PROJECT}-prod  --space ${PROJECT}-staging  --filter ${PROJECT}-filters/all  --label targetable=true  --label environment=prod
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a new configuration unit '' in space ''
+    Pre-condition: Space '' exists, unit '' does not exist
+    Post-condition: Unit '' exists with provided configuration data
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/install-envs
+[1mLINE 88:[0m cub unit tree --node=space --filter ${PROJECT}-filters/all --space '*'"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'tree' operation on unit '' in space ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/apply-all[0m
+══════════════════════════════════════════════════════════════
+
+[1mFILE:[0m bin/apply-all
+[1mLINE 24:[0m cub target create k8s-${ENV}  --space $SPACE  --type kubernetes  --config "{\"context\": \"$ENV-cluster\", \"namespace\": \"traderx-${ENV}\"}"  || echo "Target already exists"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'create' operation on target 'k8s-${ENV}'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/apply-all
+[1mLINE 34:[0m cub unit list --space $SPACE --format json |  jq -r '.[] | "\(.Labels.order // "99"):\(.Slug)"' |  sort -t: -k1 -n |  cut -d: -f2)
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Lists all units in space ''
+    Pre-condition: Space '' exists
+    Post-condition: List of units returned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/apply-all
+[1mLINE 47:[0m cub unit apply $unit  --space $SPACE  --target k8s-${ENV}  || echo "  ⚠️  Failed to apply $unit (may already be applied)"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Applies unit '$unit' to target infrastructure in space ''
+    Pre-condition: Unit '$unit' exists, target configured, worker running
+    Post-condition: Configuration deployed to Kubernetes/cloud
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/health-check[0m
+══════════════════════════════════════════════════════════════
+
+[1mFILE:[0m bin/health-check
+[1mLINE 213:[0m cub unit get-live-state "$service-deployment" --space "$SPACE" &>/dev/null; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'get-live-state' operation on unit '"$service-deployment"' in space ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/health-check
+[1mLINE 214:[0m cub unit get-live-state "$service-deployment" --space "$SPACE" 2>/dev/null |  jq -r '.Status // "Unknown"')
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Performs 'get-live-state' operation on unit '"$service-deployment"' in space ''
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/rollback[0m
+══════════════════════════════════════════════════════════════
+
+[1mFILE:[0m bin/rollback
+[1mLINE 113:[0m cub unit get "$unit" --space "$SPACE" 2>/dev/null |  jq -r '.Revision // 0')
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Retrieves full configuration for unit '"$unit"' from space ''
+    Pre-condition: Unit '"$unit"' exists
+    Post-condition: Unit configuration returned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/rollback
+[1mLINE 138:[0m cub unit apply "$unit" --space "$SPACE" --revision="$target_rev"; then
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Applies unit '"$unit"' to target infrastructure in space ''
+    Pre-condition: Unit '"$unit"' exists, target configured, worker running
+    Post-condition: Configuration deployed to Kubernetes/cloud
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/blue-green-deploy[0m
+══════════════════════════════════════════════════════════════
+
+[1mFILE:[0m bin/blue-green-deploy
+[1mLINE 155:[0m cub unit create "${SERVICE}-${NEW_COLOR}-deployment"  --space "$SPACE"  --type kubernetes/v1/Deployment  --data-file "confighub/base/${SERVICE}-deployment.yaml"  --label service="$SERVICE"  --label color="$NEW_COLOR"  --label version="$VERSION"  || warn "Unit may already exist"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Creates a new configuration unit '"${SERVICE}-${NEW_COLOR}-deployment"' in space ''
+    Pre-condition: Space '' exists, unit '"${SERVICE}-${NEW_COLOR}-deployment"' does not exist
+    Post-condition: Unit '"${SERVICE}-${NEW_COLOR}-deployment"' exists with provided configuration data
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/blue-green-deploy
+[1mLINE 165:[0m cub unit update "${SERVICE}-${NEW_COLOR}-deployment"  --space "$SPACE"  --patch  --data "{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"$SERVICE\",\"image\":\"finos/traderx-$SERVICE:$VERSION\"}]}}}}"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;31m✗ Invalid[0m
+  [0;31m  Error: --patch requires one of: --from-stdin, --filename, --restore, --upgrade, --merge-source, --label, --delete-gate, --destroy-gate, or --changeset[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [1;33m⚠ Common errors found:[0m
+  [1;33m  - --patch requires additional flags[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Updates unit '"${SERVICE}-${NEW_COLOR}-deployment"' with patch operation
+    Pre-condition: Unit '"${SERVICE}-${NEW_COLOR}-deployment"' exists
+    Post-condition: Unit updated based on patch operation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1mFILE:[0m bin/blue-green-deploy
+[1mLINE 171:[0m cub unit apply "${SERVICE}-${NEW_COLOR}-deployment"  --space "$SPACE"  --target "k8s-${ENV}"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Applies unit '"${SERVICE}-${NEW_COLOR}-deployment"' to target infrastructure in space ''
+    Pre-condition: Unit '"${SERVICE}-${NEW_COLOR}-deployment"' exists, target configured, worker running
+    Post-condition: Configuration deployed to Kubernetes/cloud
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+══════════════════════════════════════════════════════════════
+[1m[4mAnalyzing: bin/test-scripts[0m
+══════════════════════════════════════════════════════════════
+
+[1mFILE:[0m bin/test-scripts
+[1mLINE 53:[0m cub space new-prefix 2>/dev/null || echo 'fluffy-bunny')"
+
+[1mSYNTAX VALIDATION:[0m
+  [0;32m✓ Valid[0m
+
+[1mGRAMMAR VALIDATION:[0m
+  ⊘ No WHERE clause (N/A)
+
+[1mCOMMON ERRORS CHECK:[0m
+  [0;32m✓ No common errors detected[0m
+
+[1mSEMANTIC EXPLANATION:[0m
+  [0;34m📝[0m Generates a unique space prefix for naming (canonical pattern)
+    Pre-condition: User is authenticated
+    Post-condition: Returns unique prefix like 'chubby-paws'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+══════════════════════════════════════════════════════════════
+[1mANALYSIS SUMMARY[0m
+══════════════════════════════════════════════════════════════
+Files analyzed:       18
+Commands found:       109
+[0;32mValid commands:       100[0m
+[0;31mInvalid commands:     9[0m
+══════════════════════════════════════════════════════════════
+
+[1;33m⚠ Found 9 invalid command(s). See details above.[0m
