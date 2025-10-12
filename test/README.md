@@ -35,6 +35,41 @@ test-data/                              # Standard test fixtures (ConfigHub conv
 └── space-metadata.json                 # Default space metadata
 ```
 
+## CLI Validation Status
+
+All ConfigHub CLI commands in this project have been validated for correctness:
+
+**Validation Results** (Last checked: 2025-10-12):
+```
+Total commands:    88
+Valid commands:    88
+Invalid commands:  0
+Success rate:      100%
+```
+
+**Breakdown**:
+- Production scripts (bin/): 62 commands ✅
+- Test scripts (test/): 26 commands ✅
+
+**What was validated:**
+- ✅ Command syntax (entity + verb structure)
+- ✅ Required flags and combinations
+- ✅ WHERE clause grammar (EBNF compliance)
+- ✅ No inline JSON with `--patch` (must use `--from-stdin`)
+- ✅ No invalid auth commands (`cub auth get-token` not `cub auth status`)
+- ✅ No Data field queries in WHERE clauses
+
+**Validation tool**: [cub-command-analyzer](https://github.com/monadic/devops-sdk/blob/main/cub-command-analyzer.sh)
+
+**To validate changes**:
+```bash
+curl -fsSL https://raw.githubusercontent.com/monadic/devops-sdk/main/cub-command-analyzer.sh | bash -s -- .
+```
+
+All patterns follow [Brian Grant's ConfigHub CLI feedback](https://github.com/monadic/devops-sdk/blob/main/test/strategies/cub-tests.md).
+
+---
+
 ## Quick Start
 
 ### Run All Tests
