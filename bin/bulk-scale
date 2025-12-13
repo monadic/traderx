@@ -98,10 +98,13 @@ case "$ACTION" in
       units=$(cub unit list --space "$SPACE" --no-header --names 2>/dev/null | grep -E '.*-deployment$')
     fi
 
+    NAMESPACE="traderx-${ENV}"
     for unit in $units; do
-      replicas=$(cub run get-replicas --unit "$unit" --space "$SPACE" --json 2>/dev/null | \
-        jq -r '.[0].Value // "N/A"' 2>/dev/null || echo "N/A")
-      echo "  $unit: $replicas replicas"
+      # Extract deployment name from unit name (remove -deployment suffix for kubectl)
+      deploy_name="${unit%-deployment}"
+      replicas=$(kubectl get deployment "$deploy_name" -n "$NAMESPACE" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "N/A")
+      [ -z "$replicas" ] && replicas="N/A"
+      printf "  %-35s %s replicas\n" "$deploy_name:" "$replicas"
     done
     ;;
 

@@ -84,10 +84,10 @@ case "$OPERATION" in
       exit 1
     fi
 
-    # Update each unit (ConfigHub doesn't support bulk patch yet, so loop)
+    # Update each unit using set-replicas function
     for unit in $UNITS; do
       info "  Updating $unit..."
-      echo "{\"spec\":{\"replicas\":$VALUE}}" | cub unit update $unit --space $SPACE --patch --from-stdin || {
+      cub run set-replicas --replicas $VALUE --unit $unit --space $SPACE || {
         warn "Failed to update $unit"
         continue
       }

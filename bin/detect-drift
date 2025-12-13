@@ -66,21 +66,23 @@ echo "=========================="
 detect_unit_drift() {
   local unit=$1
 
-  # Get unit status including live state
-  local status
-  status=$(cub unit get "$unit" --space "$SPACE" --json 2>/dev/null | jq -r '.LiveState // "Unknown"')
+  # Get unit data (nested under .Unit in JSON response)
+  local unit_json
+  unit_json=$(cub unit get "$unit" --space "$SPACE" --json 2>/dev/null)
 
-  if [ "$status" = "Unknown" ]; then
-    echo "  $unit: Unable to determine status"
+  if [ -z "$unit_json" ]; then
+    echo "  $unit: Unable to get unit info"
     return
   fi
 
   # Compare head revision to live revision
   local head_rev live_rev
-  head_rev=$(cub unit get "$unit" --space "$SPACE" --json 2>/dev/null | jq -r '.HeadRevisionNum // 0')
-  live_rev=$(cub unit get "$unit" --space "$SPACE" --json 2>/dev/null | jq -r '.LiveRevisionNum // 0')
+  head_rev=$(echo "$unit_json" | jq -r '.Unit.HeadRevisionNum // 0')
+  live_rev=$(echo "$unit_json" | jq -r '.Unit.LiveRevisionNum // 0')
 
-  if [ "$head_rev" != "$live_rev" ]; then
+  if [ "$head_rev" = "0" ] && [ "$live_rev" = "0" ]; then
+    echo "  $unit: Not applied yet"
+  elif [ "$head_rev" != "$live_rev" ]; then
     echo "  $unit: DRIFT DETECTED (head=$head_rev, live=$live_rev)"
   else
     echo "  $unit: OK (revision $head_rev)"

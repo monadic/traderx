@@ -29,11 +29,19 @@ spec:
           value: "jdbc:h2:tcp://database:18082/traderx;DB_CLOSE_DELAY=-1"
         - name: SPRING_JPA_DATABASE_PLATFORM
           value: "org.hibernate.dialect.H2Dialect"
-        livenessProbe:
+        startupProbe:
           httpGet:
             path: /health/alive
             port: 18090
           initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 12
+        livenessProbe:
+          httpGet:
+            path: /health/alive
+            port: 18090
+          initialDelaySeconds: 0
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
@@ -41,7 +49,7 @@ spec:
           httpGet:
             path: /health/ready
             port: 18090
-          initialDelaySeconds: 5
+          initialDelaySeconds: 0
           periodSeconds: 5
           timeoutSeconds: 5
           successThreshold: 1

@@ -25,6 +25,8 @@ spec:
           value: "18088"
         - name: DATABASE_TCP_HOST
           value: "database"
+        - name: PEOPLE_SERVICE_URL
+          value: "http://people-service:18089"
         resources:
           requests:
             memory: "256Mi"

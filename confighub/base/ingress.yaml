@@ -4,58 +4,65 @@ metadata:
   name: traderx-ingress
   namespace: traderx-dev
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
+  ingressClassName: nginx
   rules:
   - host: traderx.local
     http:
       paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: web-gui
-            port:
-              number: 18080
-      - path: /api/reference-data
-        pathType: Prefix
+      # Angular frontend expects these paths (from environment.prod.ts):
+      # accountUrl: `//${window.location.host}/account-service`
+      # refrenceDataUrl: `//${window.location.host}/reference-data`
+      # etc.
+      - path: /reference-data(/|$)(.*)
+        pathType: ImplementationSpecific
         backend:
           service:
             name: reference-data
             port:
               number: 18085
-      - path: /api/people
-        pathType: Prefix
+      - path: /people-service(/|$)(.*)
+        pathType: ImplementationSpecific
         backend:
           service:
             name: people-service
             port:
               number: 18089
-      - path: /api/accounts
-        pathType: Prefix
+      - path: /account-service(/|$)(.*)
+        pathType: ImplementationSpecific
         backend:
           service:
             name: account-service
             port:
               number: 18088
-      - path: /api/positions
-        pathType: Prefix
+      - path: /position-service(/|$)(.*)
+        pathType: ImplementationSpecific
         backend:
           service:
             name: position-service
             port:
               number: 18090
-      - path: /api/trades
-        pathType: Prefix
+      - path: /trade-service(/|$)(.*)
+        pathType: ImplementationSpecific
         backend:
           service:
             name: trade-service
             port:
               number: 18092
-      - path: /api/trade-feed
-        pathType: Prefix
+      - path: /trade-feed(/|$)(.*)
+        pathType: ImplementationSpecific
         backend:
           service:
             name: trade-feed
             port:
               number: 18086
+      - path: /()(.*)
+        # Note: Empty first group () so $2 captures the full path for rewrite-target: /$2
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: web-gui
+            port:
+              number: 18093

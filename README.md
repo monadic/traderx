@@ -56,9 +56,9 @@ TraderX includes 9 microservices:
 
 **✅ 9/9 Services Running (100%)** - Full TraderX deployment with all ConfigHub patterns
 
-**Project Name**: `sweet-growl-traderx`
+**Project Name**: `$(cat .cub-project)` (dynamically generated via `cub space new-prefix`)
 **ConfigHub Spaces**: 5 (base, dev, staging, prod, filters)
-**Units Deployed**: 68 across all environments
+**Units Deployed**: 20 per environment
 **Worker Status**: ✅ Running and connected
 **Dashboard**: ✅ Accessible and functional
 
