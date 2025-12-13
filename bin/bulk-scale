@@ -1,0 +1,147 @@
+#!/bin/bash
+set -euo pipefail
+
+# TraderX Bulk Scaling Operations
+# Based on ConfigHub Tutorial: "Bulk changes"
+#
+# Scale deployments by label/filter across environments
+#
+# Usage:
+#   bin/bulk-scale <env> --replicas N                    # Scale all to N
+#   bin/bulk-scale <env> --replicas N --layer backend    # Scale backend services
+#   bin/bulk-scale <env> --replicas N --service web-gui  # Scale specific service
+#   bin/bulk-scale <env> --min-replicas                  # Scale to minimum (1)
+#   bin/bulk-scale <env> --status                        # Show current replicas
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+# Get project prefix
+if [ ! -f .cub-project ]; then
+  echo "ERROR: .cub-project not found. Run bin/install-base first."
+  exit 1
+fi
+project=$(cat .cub-project)
+
+# Parse arguments
+ENV="${1:-}"
+REPLICAS=""
+LAYER=""
+SERVICE=""
+ACTION=""
+
+shift || true
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --replicas) REPLICAS="$2"; shift 2 ;;
+    --layer) LAYER="$2"; shift 2 ;;
+    --service) SERVICE="$2"; shift 2 ;;
+    --min-replicas) REPLICAS="1"; shift ;;
+    --status) ACTION="status"; shift ;;
+    *) echo "Unknown option: $1"; exit 1 ;;
+  esac
+done
+
+if [ -z "$ENV" ]; then
+  echo "Usage: bin/bulk-scale <env> [options]"
+  echo ""
+  echo "Options:"
+  echo "  --replicas N      Set replica count to N"
+  echo "  --min-replicas    Set replicas to 1 (cost saving)"
+  echo "  --layer LAYER     Filter by layer (frontend, backend, data)"
+  echo "  --service NAME    Filter by service name"
+  echo "  --status          Show current replica counts"
+  echo ""
+  echo "Examples:"
+  echo "  bin/bulk-scale dev --status                      # Show all replicas"
+  echo "  bin/bulk-scale dev --replicas 3                  # Scale all to 3"
+  echo "  bin/bulk-scale dev --replicas 2 --layer backend  # Scale backend to 2"
+  echo "  bin/bulk-scale dev --min-replicas                # Cost saving mode"
+  echo "  bin/bulk-scale qa --replicas 1 --service web-gui # Scale web-gui to 1"
+  exit 1
+fi
+
+SPACE="${project}-${ENV}"
+
+echo "Bulk Scaling for $SPACE"
+echo "========================"
+echo ""
+
+# Build WHERE clause
+WHERE=""
+if [ -n "$LAYER" ]; then
+  WHERE="Labels.layer = '$LAYER'"
+fi
+if [ -n "$SERVICE" ]; then
+  if [ -n "$WHERE" ]; then
+    WHERE="$WHERE AND Labels.service = '$SERVICE'"
+  else
+    WHERE="Labels.service = '$SERVICE'"
+  fi
+fi
+# Only target deployments
+if [ -n "$WHERE" ]; then
+  WHERE="$WHERE AND Slug LIKE '%-deployment'"
+else
+  WHERE="Slug LIKE '%-deployment'"
+fi
+
+case "$ACTION" in
+  "status")
+    echo "Current replica counts:"
+    echo ""
+
+    # Get units matching filter
+    if [ -n "$WHERE" ]; then
+      units=$(cub unit list --space "$SPACE" --no-header --names --where "$WHERE" 2>/dev/null)
+    else
+      units=$(cub unit list --space "$SPACE" --no-header --names 2>/dev/null | grep -E '.*-deployment$')
+    fi
+
+    for unit in $units; do
+      replicas=$(cub run get-replicas --unit "$unit" --space "$SPACE" --json 2>/dev/null | \
+        jq -r '.[0].Value // "N/A"' 2>/dev/null || echo "N/A")
+      echo "  $unit: $replicas replicas"
+    done
+    ;;
+
+  *)
+    if [ -z "$REPLICAS" ]; then
+      echo "ERROR: --replicas N required"
+      exit 1
+    fi
+
+    echo "Scaling to $REPLICAS replicas..."
+    if [ -n "$LAYER" ]; then
+      echo "  Layer filter: $LAYER"
+    fi
+    if [ -n "$SERVICE" ]; then
+      echo "  Service filter: $SERVICE"
+    fi
+    echo ""
+
+    # Get units matching filter
+    if [ -n "$WHERE" ]; then
+      units=$(cub unit list --space "$SPACE" --no-header --names --where "$WHERE" 2>/dev/null)
+    else
+      units=$(cub unit list --space "$SPACE" --no-header --names 2>/dev/null | grep -E '.*-deployment$')
+    fi
+
+    if [ -z "$units" ]; then
+      echo "No matching units found."
+      exit 0
+    fi
+
+    for unit in $units; do
+      echo "Scaling: $unit -> $REPLICAS replicas"
+      cub run set-replicas --replicas "$REPLICAS" --unit "$unit" --space "$SPACE" 2>/dev/null || \
+        echo "  (failed to update)"
+    done
+
+    echo ""
+    echo "Config updated. To apply changes:"
+    echo "  bin/ordered-apply $ENV"
+    echo ""
+    echo "To verify: bin/bulk-scale $ENV --status"
+    ;;
+esac

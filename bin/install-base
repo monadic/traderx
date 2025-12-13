@@ -60,6 +60,29 @@ cub filter create ordered Unit \
   --space ${project}-filters \
   --where-field "Labels.order IN ('0','1','2','3','4','5','6','7','8','9')"
 
+# Tier-based filters (for bulk operations by importance)
+cub filter create critical Unit \
+  --space ${project}-filters \
+  --where-field "Labels.tier = 'critical'"
+
+cub filter create standard Unit \
+  --space ${project}-filters \
+  --where-field "Labels.tier = 'standard'"
+
+# Scalability filters (for bulk scaling operations)
+cub filter create scalable Unit \
+  --space ${project}-filters \
+  --where-field "Labels.scalable = 'true'"
+
+# Combined filters for common operations
+cub filter create scalable-backend Unit \
+  --space ${project}-filters \
+  --where-field "Labels.scalable = 'true' AND Labels.layer = 'backend'"
+
+cub filter create critical-backend Unit \
+  --space ${project}-filters \
+  --where-field "Labels.tier = 'critical' AND Labels.layer = 'backend'"
+
 # Create Sets for grouping
 # NOTE: 'cub set' command not available in current CLI version
 # Sets functionality may be available via API or future CLI updates
@@ -106,19 +129,22 @@ if [ -f "confighub/base/database-service.yaml" ]; then
 fi
 
 # Service units (in dependency order - CORRECTED PORTS per FINOS TraderX)
+# Format: service:order:layer:tech:port:tier:scalable
+# tier: critical (core functionality), standard (supporting services)
+# scalable: true (can be horizontally scaled), false (stateful/singleton)
 services=(
-  "reference-data:1:data:Java/Spring:18085"
-  "trade-feed:2:backend:Java/Spring:18086"
-  "account-service:3:backend:Node.js:18088"
-  "people-service:4:backend:Java/Spring:18089"
-  "position-service:5:backend:Java/Spring:18090"
-  "trade-processor:6:backend:Python:18091"
-  "trade-service:7:backend:.NET:18092"
-  "web-gui:8:frontend:Angular:18080"
+  "reference-data:1:data:Java/Spring:18085:standard:true"
+  "trade-feed:2:backend:Java/Spring:18086:critical:true"
+  "account-service:3:backend:Node.js:18088:critical:true"
+  "people-service:4:backend:Java/Spring:18089:standard:true"
+  "position-service:5:backend:Java/Spring:18090:critical:true"
+  "trade-processor:6:backend:Python:18091:critical:true"
+  "trade-service:7:backend:.NET:18092:critical:true"
+  "web-gui:8:frontend:Angular:18080:critical:true"
 )
 
 for service_info in "${services[@]}"; do
-  IFS=':' read -r service order layer tech port <<< "$service_info"
+  IFS=':' read -r service order layer tech port tier scalable <<< "$service_info"
 
   echo "  Creating $service units..."
 
@@ -130,6 +156,8 @@ for service_info in "${services[@]}"; do
       --label tech=$tech \
       --label order=$order \
       --label port=$port \
+      --label tier=$tier \
+      --label scalable=$scalable \
       ${service}-deployment \
       confighub/base/${service}-deployment.yaml
   fi
@@ -140,6 +168,7 @@ for service_info in "${services[@]}"; do
       --label service=$service \
       --label layer=$layer \
       --label port=$port \
+      --label tier=$tier \
       ${service}-service \
       confighub/base/${service}-service.yaml
   fi

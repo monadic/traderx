@@ -1,0 +1,116 @@
+#!/bin/bash
+set -euo pipefail
+
+# TraderX Validation Trigger Setup
+# Based on ConfigHub Tutorial: "Validate"
+#
+# Sets up validation triggers to prevent bad config from reaching production
+#
+# Usage:
+#   bin/setup-validation <env>           # Setup validation triggers
+#   bin/setup-validation <env> --remove  # Remove validation triggers
+#   bin/setup-validation <env> --list    # List current triggers
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+# Get project prefix
+if [ ! -f .cub-project ]; then
+  echo "ERROR: .cub-project not found. Run bin/install-base first."
+  exit 1
+fi
+project=$(cat .cub-project)
+
+# Parse arguments
+ENV="${1:-}"
+ACTION=""
+
+shift || true
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --remove) ACTION="remove"; shift ;;
+    --list) ACTION="list"; shift ;;
+    *) echo "Unknown option: $1"; exit 1 ;;
+  esac
+done
+
+if [ -z "$ENV" ]; then
+  echo "Usage: bin/setup-validation <env> [--remove|--list]"
+  echo ""
+  echo "Environments: dev, qa, staging, prod, base"
+  echo ""
+  echo "Triggers created:"
+  echo "  - require-replicas: Deployments must have replicas > 0"
+  echo "  - security-nonroot: Containers must run as non-root"
+  echo "  - no-placeholders: No placeholder values allowed"
+  echo "  - resource-limits: Containers must have resource limits"
+  exit 1
+fi
+
+SPACE="${project}-${ENV}"
+
+echo "Validation Setup for $SPACE"
+echo "============================"
+
+case "$ACTION" in
+  "list")
+    echo "Current triggers:"
+    cub trigger list --space "$SPACE"
+    ;;
+
+  "remove")
+    echo "Removing validation triggers..."
+
+    cub trigger delete require-replicas --space "$SPACE" 2>/dev/null || true
+    cub trigger delete security-nonroot --space "$SPACE" 2>/dev/null || true
+    cub trigger delete no-placeholders --space "$SPACE" 2>/dev/null || true
+    cub trigger delete resource-limits --space "$SPACE" 2>/dev/null || true
+
+    echo "Triggers removed."
+    ;;
+
+  *)
+    echo "Creating validation triggers..."
+    echo ""
+
+    # Trigger 1: Require replicas > 0 for deployments
+    echo "Creating: require-replicas"
+    cub trigger create --space "$SPACE" \
+      require-replicas Mutation Kubernetes/YAML vet-celexpr \
+      'r.kind != "Deployment" || r.spec.replicas > 0' \
+      2>/dev/null || echo "  (already exists or failed)"
+
+    # Trigger 2: Security - containers must run as non-root (for prod/staging)
+    if [ "$ENV" = "prod" ] || [ "$ENV" = "staging" ]; then
+      echo "Creating: security-nonroot (production environments)"
+      cub trigger create --space "$SPACE" \
+        security-nonroot Mutation Kubernetes/YAML vet-celexpr \
+        'r.kind != "Deployment" || r.spec.template.spec.securityContext.runAsNonRoot == true' \
+        2>/dev/null || echo "  (already exists or failed)"
+    fi
+
+    # Trigger 3: No placeholder values (for prod/staging)
+    if [ "$ENV" = "prod" ] || [ "$ENV" = "staging" ]; then
+      echo "Creating: no-placeholders (production environments)"
+      cub trigger create --space "$SPACE" \
+        no-placeholders Mutation Kubernetes/YAML vet-placeholders \
+        2>/dev/null || echo "  (already exists or failed)"
+    fi
+
+    # Trigger 4: Resource limits required (for prod)
+    if [ "$ENV" = "prod" ]; then
+      echo "Creating: resource-limits (production only)"
+      cub trigger create --space "$SPACE" \
+        resource-limits Mutation Kubernetes/YAML vet-celexpr \
+        'r.kind != "Deployment" || size(r.spec.template.spec.containers[0].resources.limits) > 0' \
+        2>/dev/null || echo "  (already exists or failed)"
+    fi
+
+    echo ""
+    echo "Validation triggers configured. View with:"
+    echo "  bin/setup-validation $ENV --list"
+    echo ""
+    echo "To see units with apply gates:"
+    echo "  cub unit list --space $SPACE --where \"LEN(ApplyGates) > 0\""
+    ;;
+esac

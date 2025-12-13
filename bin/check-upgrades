@@ -1,0 +1,106 @@
+#!/bin/bash
+set -euo pipefail
+
+# TraderX Upgrade Status Checker
+# Based on ConfigHub Tutorial: "Clone"
+#
+# Checks which units need upgrades from upstream and optionally applies them
+#
+# Usage:
+#   bin/check-upgrades <env>           # Check upgrade status
+#   bin/check-upgrades <env> --apply   # Apply pending upgrades
+#   bin/check-upgrades <env> --unit <name> --apply  # Upgrade specific unit
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+# Get project prefix
+if [ ! -f .cub-project ]; then
+  echo "ERROR: .cub-project not found. Run bin/install-base first."
+  exit 1
+fi
+project=$(cat .cub-project)
+
+# Parse arguments
+ENV="${1:-}"
+ACTION=""
+TARGET_UNIT=""
+
+shift || true
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --apply) ACTION="apply"; shift ;;
+    --unit) TARGET_UNIT="$2"; shift 2 ;;
+    *) echo "Unknown option: $1"; exit 1 ;;
+  esac
+done
+
+if [ -z "$ENV" ]; then
+  echo "Usage: bin/check-upgrades <env> [--apply] [--unit <name>]"
+  echo ""
+  echo "Environments: dev, qa, staging, prod"
+  echo ""
+  echo "This script checks if units have pending upgrades from their upstream"
+  echo "unit (e.g., dev -> base, staging -> qa)."
+  echo ""
+  echo "Examples:"
+  echo "  bin/check-upgrades qa              # Check qa for pending upgrades from base"
+  echo "  bin/check-upgrades qa --apply      # Apply all pending upgrades"
+  echo "  bin/check-upgrades staging --unit web-gui-deployment --apply"
+  exit 1
+fi
+
+SPACE="${project}-${ENV}"
+
+echo "Upgrade Status for $SPACE"
+echo "========================="
+echo ""
+
+# Check upgrade status using unit list with appropriate columns
+echo "Units with upstream relationships:"
+echo ""
+
+# List units showing upgrade status
+if [ -n "$TARGET_UNIT" ]; then
+  cub unit get "$TARGET_UNIT" --space "$SPACE" --json 2>/dev/null | \
+    jq -r '"\(.Slug): HeadRev=\(.HeadRevisionNum), UpstreamRev=\(.UpstreamRevisionNum // "N/A")"'
+else
+  # List all units that have upstream
+  cub unit list --space "$SPACE" --json 2>/dev/null | \
+    jq -r '.[] | select(.UpstreamUnitID != null) | "\(.Slug): HeadRev=\(.HeadRevisionNum), UpstreamRev=\(.UpstreamRevisionNum // 0)"' 2>/dev/null || \
+    echo "No units with upstream relationships found"
+fi
+
+echo ""
+
+# Apply upgrades if requested
+if [ "$ACTION" = "apply" ]; then
+  echo "Applying upgrades..."
+  echo ""
+
+  if [ -n "$TARGET_UNIT" ]; then
+    echo "Upgrading: $TARGET_UNIT"
+    cub unit update "$TARGET_UNIT" --space "$SPACE" --upgrade
+    cub unit apply "$TARGET_UNIT" --space "$SPACE"
+  else
+    # Get list of units with upstream
+    units=$(cub unit list --space "$SPACE" --json 2>/dev/null | \
+      jq -r '.[] | select(.UpstreamUnitID != null) | .Slug' 2>/dev/null)
+
+    if [ -z "$units" ]; then
+      echo "No units with upstream relationships to upgrade."
+    else
+      for unit in $units; do
+        echo "Upgrading: $unit"
+        cub unit update "$unit" --space "$SPACE" --upgrade 2>/dev/null || \
+          echo "  (already up to date or failed)"
+      done
+
+      echo ""
+      echo "Upgrades merged. To deploy changes:"
+      echo "  bin/ordered-apply $ENV"
+    fi
+  fi
+else
+  echo "To apply upgrades: bin/check-upgrades $ENV --apply"
+fi

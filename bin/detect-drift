@@ -1,0 +1,154 @@
+#!/bin/bash
+set -euo pipefail
+
+# TraderX Drift Detection and Management
+# Based on ConfigHub Tutorial: "Manage drift"
+#
+# Usage:
+#   bin/detect-drift <env>              # Detect drift in environment
+#   bin/detect-drift <env> --refresh    # Refresh units from live state
+#   bin/detect-drift <env> --restore    # Restore units to ConfigHub state
+#   bin/detect-drift <env> --diff       # Show detailed diffs
+#   bin/detect-drift <env> --unit <name> # Target specific unit
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+# Get project prefix
+if [ ! -f .cub-project ]; then
+  echo "ERROR: .cub-project not found. Run bin/install-base first."
+  exit 1
+fi
+project=$(cat .cub-project)
+
+# Parse arguments
+ENV="${1:-}"
+ACTION=""
+TARGET_UNIT=""
+
+shift || true
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --refresh) ACTION="refresh"; shift ;;
+    --restore) ACTION="restore"; shift ;;
+    --diff) ACTION="diff"; shift ;;
+    --unit) TARGET_UNIT="$2"; shift 2 ;;
+    *) echo "Unknown option: $1"; exit 1 ;;
+  esac
+done
+
+if [ -z "$ENV" ]; then
+  echo "Usage: bin/detect-drift <env> [--refresh|--restore|--diff] [--unit <name>]"
+  echo ""
+  echo "Environments: dev, qa, staging, prod"
+  echo ""
+  echo "Options:"
+  echo "  --refresh    Capture live state into ConfigHub (creates new revision)"
+  echo "  --restore    Restore live state to match ConfigHub"
+  echo "  --diff       Show detailed diff for each unit"
+  echo "  --unit NAME  Target specific unit"
+  echo ""
+  echo "Examples:"
+  echo "  bin/detect-drift dev                    # Check for drift in dev"
+  echo "  bin/detect-drift dev --diff             # Show what changed"
+  echo "  bin/detect-drift dev --refresh          # Accept live changes into ConfigHub"
+  echo "  bin/detect-drift dev --restore          # Push ConfigHub state to live"
+  echo "  bin/detect-drift dev --unit web-gui-deployment --diff"
+  exit 1
+fi
+
+SPACE="${project}-${ENV}"
+
+echo "Drift Detection for $SPACE"
+echo "=========================="
+
+# Function to detect drift for a unit
+detect_unit_drift() {
+  local unit=$1
+
+  # Get unit status including live state
+  local status
+  status=$(cub unit get "$unit" --space "$SPACE" --json 2>/dev/null | jq -r '.LiveState // "Unknown"')
+
+  if [ "$status" = "Unknown" ]; then
+    echo "  $unit: Unable to determine status"
+    return
+  fi
+
+  # Compare head revision to live revision
+  local head_rev live_rev
+  head_rev=$(cub unit get "$unit" --space "$SPACE" --json 2>/dev/null | jq -r '.HeadRevisionNum // 0')
+  live_rev=$(cub unit get "$unit" --space "$SPACE" --json 2>/dev/null | jq -r '.LiveRevisionNum // 0')
+
+  if [ "$head_rev" != "$live_rev" ]; then
+    echo "  $unit: DRIFT DETECTED (head=$head_rev, live=$live_rev)"
+  else
+    echo "  $unit: OK (revision $head_rev)"
+  fi
+}
+
+# Get all units in space
+if [ -n "$TARGET_UNIT" ]; then
+  units="$TARGET_UNIT"
+else
+  units=$(cub unit list --space "$SPACE" --no-header --names 2>/dev/null)
+fi
+
+case "$ACTION" in
+  "refresh")
+    echo "Refreshing units from live state..."
+    echo ""
+
+    if [ -n "$TARGET_UNIT" ]; then
+      echo "Refreshing: $TARGET_UNIT"
+      cub unit refresh "$TARGET_UNIT" --space "$SPACE"
+    else
+      # Refresh all units in space
+      cub unit refresh --space "$SPACE" --where "Slug != ''"
+    fi
+
+    echo ""
+    echo "Live state captured into ConfigHub. Review with:"
+    echo "  bin/detect-drift $ENV --diff"
+    ;;
+
+  "restore")
+    echo "Restoring units to ConfigHub state..."
+    echo ""
+
+    for unit in $units; do
+      echo "Restoring: $unit"
+      cub unit update "$unit" --space "$SPACE" --restore LiveRevisionNum
+      cub unit apply "$unit" --space "$SPACE"
+    done
+
+    echo ""
+    echo "All units restored to ConfigHub state."
+    ;;
+
+  "diff")
+    echo "Checking differences..."
+    echo ""
+
+    for unit in $units; do
+      echo "=== $unit ==="
+      cub unit diff -u "$unit" --space "$SPACE" --from=-1 2>/dev/null || echo "  No diff available"
+      echo ""
+    done
+    ;;
+
+  *)
+    # Default: show drift status
+    echo "Checking drift status..."
+    echo ""
+
+    for unit in $units; do
+      detect_unit_drift "$unit"
+    done
+
+    echo ""
+    echo "To see details: bin/detect-drift $ENV --diff"
+    echo "To accept live: bin/detect-drift $ENV --refresh"
+    echo "To restore:     bin/detect-drift $ENV --restore"
+    ;;
+esac
