@@ -108,6 +108,15 @@ This runs the [ConfigHub + Kubernetes Mini TCK](https://github.com/monadic/devop
 
 **If the check fails**, see [MicroTraderX Prerequisites](https://github.com/monadic/microtraderx#prerequisites) for step-by-step troubleshooting.
 
+### Documentation Validation
+
+**Documentation Code is Production Code:** All `cub` commands in this README and QUICKSTART.md must be validated before changes are committed:
+
+```bash
+# Validate all cub commands in documentation
+curl -fsSL https://raw.githubusercontent.com/monadic/devops-sdk/main/cub-command-analyzer.sh | bash -s -- .
+```
+
 ### Option 1: Simple Sequential Deployment
 
 ```bash

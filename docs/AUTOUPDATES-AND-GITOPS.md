@@ -1,5 +1,7 @@
 # ConfigHub Auto-Updates and GitOps: Critical Lessons
 
+> **ConfigHub Documentation**: For detailed two-state model documentation (update vs apply, desired vs live state), see [docs.confighub.com](https://docs.confighub.com). This document covers lessons learned during TraderX deployment.
+
 ## Executive Summary
 
 ConfigHub is **NOT GitOps** (by default). Understanding the difference between updating ConfigHub state and deploying to infrastructure is critical for all examples and tutorials.

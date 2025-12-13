@@ -1,5 +1,7 @@
 # Advanced ConfigHub Patterns in TraderX
 
+> **ConfigHub Documentation**: For comprehensive pattern documentation (filters, bulk operations, labels, two-state model), see [docs.confighub.com](https://docs.confighub.com). This document shows TraderX-specific implementations.
+
 This document explains the production-grade ConfigHub patterns used in TraderX. These patterns go beyond basic ConfigHub usage and demonstrate enterprise-scale deployment capabilities.
 
 **Note**: These are ADVANCED patterns. For learning ConfigHub basics, see [microtraderx](https://github.com/monadic/microtraderx) which uses simpler, tutorial-focused patterns.

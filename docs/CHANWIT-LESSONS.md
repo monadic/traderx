@@ -1,5 +1,7 @@
 # Chanwit Lessons and TraderX Fixes
 
+> **ConfigHub Documentation**: For ConfigHub patterns (links, hierarchy, push-upgrade), see [docs.confighub.com](https://docs.confighub.com). This document covers lessons from chanwit's TraderX implementation.
+
 **Date**: 2025-10-09
 **Status**: Complete with Production Enhancements
 **Source**: https://github.com/chanwit/traderx

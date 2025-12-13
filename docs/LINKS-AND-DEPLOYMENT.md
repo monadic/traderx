@@ -1,10 +1,11 @@
 # ConfigHub Links and Deployment Patterns
 
+> **ConfigHub Documentation**: For comprehensive Links documentation (needs/provides, cross-space links, bulk creation), see [docs.confighub.com](https://docs.confighub.com/entities/link/). This document covers TraderX-specific implementation.
+
 **Date**: 2025-10-09
 **Pattern**: Hybrid approach combining Links + Multi-Environment Hierarchy
-**Source**: https://docs.confighub.com/entities/link/
 
-This document explains ConfigHub's canonical pattern for handling service dependencies using Links, and how it combines with multi-environment hierarchies for production deployments.
+This document explains ConfigHub's canonical pattern for handling service dependencies using Links, and how it combines with multi-environment hierarchies for TraderX production deployments.
 
 ---
 

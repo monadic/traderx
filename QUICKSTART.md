@@ -14,6 +14,16 @@ Deploy TraderX with ConfigHub in under 10 minutes.
 
 **If missing prerequisites**, see [README.md prerequisites section](README.md#prerequisites).
 
+### Pre-Flight Check
+
+Before deploying, verify your ConfigHub + Kubernetes environment:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/monadic/devops-sdk/main/test-confighub-k8s | bash
+```
+
+Expected output: `🎉 SUCCESS! ConfigHub + Kubernetes integration verified`
+
 ## One-Time Setup: /etc/hosts
 
 Add `traderx.local` to your hosts file (required for ingress routing):

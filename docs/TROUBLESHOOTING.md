@@ -1,5 +1,7 @@
 # TraderX Troubleshooting Guide
 
+> **ConfigHub Documentation**: For general ConfigHub troubleshooting (workers, units, targets, apply operations), see [docs.confighub.com](https://docs.confighub.com). This guide covers TraderX-specific issues.
+
 Common issues and solutions for TraderX ConfigHub deployment.
 
 ## Quick Fixes
