@@ -81,11 +81,20 @@ TraderX includes 9 microservices:
 ## 🚀 Quick Start
 
 ### Prerequisites
-- ConfigHub account ([sign up](https://confighub.com))
-- ConfigHub CLI: `brew install confighubai/tap/cub`
-- Kubernetes cluster (Kind, Minikube, or cloud) **running**
-- Docker daemon **running**
-- `cub auth login` completed
+
+**New to ConfigHub?** Start with [MicroTraderX](https://github.com/monadic/microtraderx) for detailed setup instructions.
+
+**Quick checklist** (assumes tools already installed):
+
+| Requirement | Installation | Verify |
+|-------------|-------------|--------|
+| Docker | `brew install --cask docker` | `docker info` |
+| ConfigHub account | [Sign up](https://hub.confighub.com) | - |
+| ConfigHub CLI | `brew install confighubai/tap/cub` | `cub version` |
+| ConfigHub login | `cub auth login` | `cub auth status` |
+| Kubernetes (Kind) | `brew install kind && kind create cluster` | `kubectl cluster-info` |
+
+**Detailed installation instructions**: See [MicroTraderX Prerequisites](https://github.com/monadic/microtraderx#prerequisites).
 
 ### Pre-Flight Check
 
@@ -96,6 +105,8 @@ curl -fsSL https://raw.githubusercontent.com/monadic/devops-sdk/main/test-config
 ```
 
 This runs the [ConfigHub + Kubernetes Mini TCK](https://github.com/monadic/devops-sdk/blob/main/TCK.md) to verify your setup is working correctly. Expected output: `🎉 SUCCESS! ConfigHub + Kubernetes integration verified`
+
+**If the check fails**, see [MicroTraderX Prerequisites](https://github.com/monadic/microtraderx#prerequisites) for step-by-step troubleshooting.
 
 ### Option 1: Simple Sequential Deployment
 
