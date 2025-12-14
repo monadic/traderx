@@ -4,6 +4,43 @@ set -euo pipefail
 # TraderX ConfigHub Installation - Base Structure
 # Following canonical patterns from global-app
 
+# Pre-flight checks
+preflight_check() {
+    echo "🔍 Running pre-flight checks..."
+
+    # Check cub CLI
+    if ! command -v cub &>/dev/null; then
+        echo "❌ Error: 'cub' CLI not found"
+        echo "   Install: curl -fsSL https://hub.confighub.com/cub/install.sh | bash"
+        exit 1
+    fi
+
+    # Check cub authentication
+    if ! cub space list &>/dev/null; then
+        echo "❌ Error: Not authenticated with ConfigHub"
+        echo "   Run: cub auth login"
+        exit 1
+    fi
+
+    # Check kubectl
+    if ! command -v kubectl &>/dev/null; then
+        echo "❌ Error: 'kubectl' not found"
+        exit 1
+    fi
+
+    # Check cluster connectivity
+    if ! kubectl cluster-info &>/dev/null; then
+        echo "❌ Error: Cannot connect to Kubernetes cluster"
+        echo "   Run: kubectl cluster-info"
+        exit 1
+    fi
+
+    echo "✅ Pre-flight checks passed"
+    echo ""
+}
+
+preflight_check
+
 echo "🚀 Installing TraderX base structure in ConfigHub..."
 
 # Pattern 1: Unique Project Naming

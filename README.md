@@ -90,7 +90,7 @@ TraderX includes 9 microservices:
 |-------------|-------------|--------|
 | Docker | `brew install --cask docker` | `docker info` |
 | ConfigHub account | [Sign up](https://hub.confighub.com) | - |
-| ConfigHub CLI | `brew install confighubai/tap/cub` | `cub version` |
+| ConfigHub CLI | `curl -fsSL https://hub.confighub.com/cub/install.sh \| bash` | `cub version` |
 | ConfigHub login | `cub auth login` | `cub auth status` |
 | Kubernetes (Kind) | `brew install kind && kind create cluster` | `kubectl cluster-info` |
 

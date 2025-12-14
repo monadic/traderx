@@ -164,29 +164,15 @@ fi
 echo ""
 
 # Test Suite 4: Set Operations
+# NOTE: Sets are an API-only feature - no CLI commands available
+# These tests are skipped. Use Filters for CLI-based grouping instead.
 echo "Test Suite 4: Set Operations"
 echo "--------------------------------------"
-
-test_start "Create set"
-if cub set create test-set --space "${TEST_PREFIX}-test" --label "type=test" &>/dev/null; then
-  test_pass
-else
-  test_fail "Failed to create set"
-fi
-
-test_start "Get set"
-if cub set get test-set --space "${TEST_PREFIX}-test" &>/dev/null; then
-  test_pass
-else
-  test_fail "Failed to get set"
-fi
-
-test_start "List sets"
-if cub set list --space "${TEST_PREFIX}-test" --format json | jq -e '.[] | select(.Slug == "test-set")' &>/dev/null; then
-  test_pass
-else
-  test_fail "Set not in list"
-fi
+echo "⏭️  SKIPPED: 'cub set' commands not available in CLI"
+echo "   Sets are API-only. Use 'cub filter' for CLI-based grouping."
+echo ""
+# Increment skip counter instead of running tests
+SKIPPED=$((${SKIPPED:-0} + 3))
 
 echo ""
 
